@@ -30,7 +30,7 @@ function ProductDetails() {
     setError(null);
 
     axios
-      .get(`http://127.0.0.1:8000/api/accounts/product/${id}/`)
+      .get(`https://claywarebackend.onrender.com/accounts/product/${id}/`)
       .then((res) => {
         if (cancelled) return;
 
