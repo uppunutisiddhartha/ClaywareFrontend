@@ -1,0 +1,160 @@
+/* =========================
+STORY SECTION CONTAINER
+========================= */
+.story-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 80px 50px;
+    background: #faf8f3; /* Matching your theme background */
+}
+
+/* Header Text elements */
+.story-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.story-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 54px;
+    font-weight: 500;
+    color: #111;
+    margin-bottom: 16px;
+}
+
+.story-header p {
+    font-family: 'Inter', sans-serif;
+    color: #555;
+    font-size: 16px;
+    letter-spacing: 0.3px;
+}
+
+/* =========================
+STUDIO GRID SYSTEM
+========================= */
+.studio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+}
+
+/* =========================
+STUDIO CARD INTERACTION
+========================= */
+.studio-card {
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+}
+
+.studio-image-box {
+    width: 100%;
+    height: 440px; /* High-aspect ratio matching image specs */
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.studio-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Optional: Filter to force monochrome effect if using color images */
+    filter: grayscale(100%) contrast(110%);
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.studio-card:hover .studio-image {
+    transform: scale(1.03);
+}
+
+/* =========================
+CARD CONTENT & TYPOGRAPHY
+========================= */
+.studio-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.studio-location {
+    font-size: 12px;
+    color: #8d8d8d;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 8px;
+}
+
+.studio-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 500;
+    color: #111;
+    margin-bottom: 12px;
+}
+
+.studio-description {
+    font-family: 'Inter', sans-serif;
+    color: #666;
+    font-size: 15px;
+    line-height: 24px;
+    margin-bottom: 20px;
+    max-width: 90%;
+}
+
+/* Visit Link Button UI */
+.visit-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #111;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+    transition: border-color 0.3s ease;
+}
+
+.visit-link:hover {
+    border-color: #111;
+}
+
+.arrow-icon {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.visit-link:hover .arrow-icon {
+    transform: translate(2px, -2px);
+}
+
+/* =========================
+RESPONSIVE LAYOUT
+========================= */
+@media (max-width: 1100px) {
+    .studio-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+    .story-header h2 {
+        font-size: 44px;
+    }
+}
+
+@media (max-width: 768px) {
+    .story-section {
+        padding: 50px 24px;
+    }
+    .studio-grid {
+        grid-template-columns: 1fr;
+        gap: 45px;
+    }
+    .story-header h2 {
+        font-size: 36px;
+    }
+    .studio-image-box {
+        height: 380px;
+    }
+}

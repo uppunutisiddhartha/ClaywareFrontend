@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&display=swap');
+
+.why-choose-us {
+  width: 100%;
+  background-color: #faf8f3; /* Premium clean off-white background matching the image */
+  padding: 80px 60px 100px;
+  display: flex;
+  justify-content: center;
+}
+
+/* =========================
+3-COLUMN PLATFORM GRID
+========================= */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Enforces the clean 3-column split view */
+  gap: 60px;
+  max-width: 1400px;
+  width: 100%;
+}
+
+/* =========================
+INDIVIDUAL CORE PILLAR
+========================= */
+.feature-item {
+  text-align: center;
+  background: transparent; /* Removes old box/card layouts for a flat premium look */
+  padding: 10px 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* =========================
+MINIMALISTIC LINE ICONS
+========================= */
+.feature-icon-wrapper {
+  font-size: 32px;
+  color: #111111;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+}
+
+.feature-icon {
+  stroke-width: 1.2px; /* Super thin weight to mimic high-end editorial designs */
+}
+
+/* =========================
+TYPOGRAPHY & BRAND VOICE
+========================= */
+.feature-item h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 500;
+  color: #111111;
+  margin-bottom: 14px;
+  letter-spacing: 0.3px;
+}
+
+.feature-item p {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 24px;
+  color: #555555;
+  max-width: 290px; /* Forces intentional and symmetrical line breaking */
+}
+
+/* =========================
+RESPONSIVE LAYOUT BREAKPOINTS
+========================= */
+@media (max-width: 1024px) {
+  .features-grid {
+    gap: 35px;
+  }
+  
+  .feature-item h3 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .why-choose-us {
+    padding: 60px 24px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr; /* Responsively wraps into a single vertical column stack */
+    gap: 50px;
+  }
+  
+  .feature-item p {
+    max-width: 100%;
+  }
+}

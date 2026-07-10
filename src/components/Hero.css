@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap');
+
+.hero {
+    width: 100%;
+    min-height: 60vh; /* Centered, breathable height instead of a huge split view */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 100px 24px;
+    background-color: #faf8f3; /* Matching the clean cream background */
+}
+
+.hero-content {
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* =========================
+TOP SUBTITLE / EST. TAG
+========================= */
+.hero-est {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    color: #888888;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+}
+
+/* =========================
+MAIN TITLES
+========================= */
+.hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 76px;
+    font-weight: 400;
+    color: #111111;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    letter-spacing: -1px;
+}
+
+.hero-title .italic-text {
+    font-style: italic;
+    font-family: 'Cormorant Garamond', serif;
+}
+
+/* =========================
+DESCRIPTION BODY
+========================= */
+.hero-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 26px;
+    color: #555555;
+    max-width: 580px;
+    margin-bottom: 40px;
+}
+
+/* =========================
+SOLID ACTION BUTTON
+========================= */
+.hero-btn {
+    background-color: #111111;
+    color: #ffffff;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    padding: 16px 36px;
+    border-radius: 0; /* Flat layout edges */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.hero-btn:hover {
+    background-color: #333333;
+}
+
+/* =========================
+RESPONSIVE LAYOUTS
+========================= */
+@media (max-width: 768px) {
+    .hero {
+        padding: 70px 20px;
+        min-height: auto;
+    }
+    
+    .hero-title {
+        font-size: 48px;
+    }
+    
+    .hero-desc {
+        font-size: 15px;
+        line-height: 24px;
+    }
+}

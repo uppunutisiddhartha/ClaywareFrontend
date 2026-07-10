@@ -1,0 +1,30 @@
+.newsletter{
+    padding:80px;
+    text-align:center;
+    background:#fff7ef;
+}
+
+.newsletter h2{
+    font-size:40px;
+}
+
+.newsletter p{
+    margin:20px 0;
+}
+
+.newsletter input{
+    width:350px;
+    padding:15px;
+    border:1px solid #ddd;
+    border-radius:10px;
+}
+
+.newsletter button{
+    margin-left:10px;
+    padding:15px 35px;
+    background:#8b4513;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}

@@ -1,0 +1,99 @@
+.home-banner-wrapper {
+  padding: 30px;
+  background: #f8f9fb;
+}
+
+.banner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* MAIN CARD */
+.banner-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 25px;
+  background: linear-gradient(135deg, #fff7ed, #ffe4c7);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  transition: all 0.4s ease;
+}
+
+/* HOVER EFFECT */
+.banner-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+}
+
+/* GLOW EFFECT */
+.banner-glow {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(255,140,0,0.4), transparent);
+  filter: blur(20px);
+}
+
+/* CONTENT */
+.banner-content {
+  position: relative;
+  z-index: 2;
+}
+
+.banner-content h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #e65100;
+  margin-bottom: 6px;
+}
+
+.banner-content h3 {
+  font-size: 16px;
+  color: #ff6f00;
+  margin-bottom: 10px;
+}
+
+.banner-content p {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.5;
+}
+
+/* BADGE */
+.badge {
+  display: inline-block;
+  background: #ff6f00;
+  color: white;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+/* BUTTON */
+.banner-btn {
+  margin-top: 15px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff6f00, #ff9800);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.banner-btn:hover {
+  background: linear-gradient(135deg, #e65100, #ff6f00);
+  transform: scale(1.05);
+}
+
+/* LOADER */
+.banner-loader {
+  text-align: center;
+  font-size: 16px;
+  color: #777;
+}

@@ -1,0 +1,860 @@
+/* ==========================================
+   GOOGLE FONT
+========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ==========================================
+   NAVBAR
+========================================== */
+
+.navbar{
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    height: 78px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 7%;
+
+    background: rgba(255,255,255,.92);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    border-bottom: 1px solid rgba(0,0,0,.06);
+
+    z-index: 1000;
+
+    font-family: "Poppins", sans-serif;
+
+    transition: .35s ease;
+}
+
+/* ==========================================
+   LOGO
+========================================== */
+
+.logo{
+
+    font-size: 30px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+    color: #8a4b16;
+
+    cursor: pointer;
+
+    user-select: none;
+
+    transition: .3s;
+}
+
+.logo:hover{
+
+    color: #b86b29;
+
+    transform: scale(1.04);
+}
+
+/* ==========================================
+   NAVIGATION
+========================================== */
+
+nav{
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 42px;
+}
+
+nav a{
+
+    position: relative;
+
+    text-decoration: none;
+
+    color: #333;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    letter-spacing: .5px;
+
+    transition: .3s;
+}
+
+nav a::after{
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+
+    bottom: -8px;
+
+    width: 0;
+
+    height: 2px;
+
+    background: #b86b29;
+
+    border-radius: 10px;
+
+    transition: .35s;
+}
+
+nav a:hover{
+
+    color: #b86b29;
+}
+
+nav a:hover::after{
+
+    width: 100%;
+}
+
+/* ==========================================
+   RIGHT SIDE
+========================================== */
+
+.nav-actions{
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+}
+
+/* ==========================================
+   ICONS
+========================================== */
+
+.nav-icon{
+
+    font-size: 22px;
+
+    color: #444;
+
+    cursor: pointer;
+
+    transition: .3s;
+}
+
+.nav-icon:hover{
+
+    color: #b86b29;
+
+    transform: translateY(-2px);
+}
+
+/* ==========================================
+   CART
+========================================== */
+
+.cart-wrapper{
+
+    position: relative;
+
+    cursor: pointer;
+}
+
+.cart-icon{
+
+    font-size: 24px;
+}
+
+.cart-badge{
+
+    position: absolute;
+
+    top: -8px;
+
+    right: -10px;
+
+    min-width: 20px;
+
+    height: 20px;
+
+    padding: 0 5px;
+
+    border-radius: 50px;
+
+    background: #ff3b30;
+
+    color: white;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-shadow: 0 4px 10px rgba(255,59,48,.35);
+}
+
+/* ==========================================
+   LOGIN BUTTON
+========================================== */
+
+.login-btn{
+
+    border: none;
+
+    outline: none;
+
+    cursor: pointer;
+
+    padding: 11px 24px;
+
+    border-radius: 50px;
+
+    background: linear-gradient(
+        135deg,
+        #b86b29,
+        #8a4b16
+    );
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    letter-spacing: .5px;
+
+    transition: .35s;
+
+    box-shadow: 0 10px 22px rgba(184,107,41,.22);
+}
+
+.login-btn:hover{
+
+    transform: translateY(-3px);
+
+    box-shadow: 0 15px 28px rgba(184,107,41,.35);
+}
+
+.login-btn:active{
+
+    transform: scale(.96);
+}
+
+/* ==========================================
+   MOBILE MENU ICON
+========================================== */
+
+.mobile-menu{
+
+    display: none;
+
+    font-size: 28px;
+
+    cursor: pointer;
+
+    color: #333;
+}
+
+/* ==========================================
+   SMALL ANIMATIONS
+========================================== */
+
+.cart-wrapper:hover .cart-icon{
+
+    transform: translateY(-2px);
+}
+
+.nav-icon,
+.cart-icon,
+.login-btn,
+.logo,
+nav a{
+
+    transition: all .3s ease;
+}
+/* ==========================================
+   ACCOUNT MENU
+========================================== */
+
+.account-menu{
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* ==========================================
+   ACCOUNT BUTTON
+========================================== */
+
+.account-btn{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    border: none;
+    outline: none;
+    background: transparent;
+
+    cursor: pointer;
+
+    padding: 8px 14px;
+
+    border-radius: 50px;
+
+    transition: all .3s ease;
+}
+
+.account-btn:hover{
+    background: rgba(184,107,41,.08);
+}
+
+/* ==========================================
+   AVATAR
+========================================== */
+
+.avatar-circle{
+    width: 42px;
+    height: 42px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: linear-gradient(
+        135deg,
+        #b86b29,
+        #8a4b16
+    );
+
+    color: white;
+
+    font-size: 19px;
+
+    box-shadow: 0 8px 18px rgba(184,107,41,.25);
+}
+
+.account-btn span{
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* ==========================================
+   ARROW
+========================================== */
+
+.account-btn svg:last-child{
+    transition: .3s;
+}
+
+.rotate{
+    transform: rotate(180deg);
+}
+
+/* ==========================================
+   DROPDOWN
+========================================== */
+
+.account-dropdown{
+
+    position: absolute;
+
+    top: 62px;
+    right: 0;
+
+    width: 290px;
+
+    background: rgba(255,255,255,.96);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    border-radius: 18px;
+
+    border: 1px solid rgba(255,255,255,.4);
+
+    overflow: hidden;
+
+    box-shadow:
+        0 20px 45px rgba(0,0,0,.12);
+
+    animation: dropdown .28s ease;
+
+    z-index: 1000;
+}
+
+@keyframes dropdown{
+
+    from{
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+
+    to{
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+.dropdown-header{
+
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    padding: 22px;
+
+    background: linear-gradient(
+        135deg,
+        #fdf5ef,
+        #fffaf7
+    );
+}
+
+/* ==========================================
+   LARGE AVATAR
+========================================== */
+
+.profile-avatar{
+
+    width: 55px;
+    height: 55px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: linear-gradient(
+        135deg,
+        #b86b29,
+        #8a4b16
+    );
+
+    color: white;
+
+    font-size: 23px;
+
+    flex-shrink: 0;
+}
+
+.dropdown-header h4{
+
+    margin: 0;
+
+    font-size: 16px;
+
+    color: #222;
+
+    font-weight: 700;
+}
+
+.dropdown-header p{
+
+    margin-top: 4px;
+
+    font-size: 12px;
+
+    color: #777;
+
+    word-break: break-word;
+}
+
+/* ==========================================
+   DIVIDER
+========================================== */
+
+.dropdown-divider{
+    height: 1px;
+    background: #ececec;
+}
+
+/* ==========================================
+   MENU ITEM
+========================================== */
+
+.dropdown-item{
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 15px 22px;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+    color: #444;
+
+    font-size: 14px;
+
+    font-weight: 500;
+}
+
+.dropdown-item svg{
+
+    font-size: 19px;
+
+    color: #777;
+
+    transition: .3s;
+}
+
+/* ==========================================
+   HOVER EFFECT
+========================================== */
+
+.dropdown-item:hover{
+
+    background: rgba(184,107,41,.08);
+
+    color: #b86b29;
+}
+
+.dropdown-item:hover svg{
+
+    color: #b86b29;
+
+    transform: translateX(3px);
+}
+
+/* ==========================================
+   LOGOUT
+========================================== */
+
+.logout{
+
+    color: #d32f2f;
+}
+
+.logout svg{
+
+    color: #d32f2f;
+}
+
+.logout:hover{
+
+    background: rgba(211,47,47,.08);
+
+    color: #d32f2f;
+}
+
+.logout:hover svg{
+
+    color: #d32f2f;
+}
+
+/* ==========================================
+   OPTIONAL BADGE
+========================================== */
+
+.menu-badge{
+
+    margin-left: auto;
+
+    background: #ff3b30;
+
+    color: white;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    padding: 3px 8px;
+
+    border-radius: 50px;
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+.account-dropdown::-webkit-scrollbar{
+    width: 6px;
+}
+
+.account-dropdown::-webkit-scrollbar-thumb{
+    background: rgba(184,107,41,.4);
+    border-radius: 10px;
+}
+
+.account-dropdown::-webkit-scrollbar-track{
+    background: transparent;
+}
+/* ==========================================
+   RESPONSIVE DESIGN
+========================================== */
+
+/* ---------- Large Tablets ---------- */
+
+@media (max-width: 1100px){
+
+    .navbar{
+        padding: 0 5%;
+    }
+
+    nav{
+        gap: 28px;
+    }
+
+    .logo{
+        font-size: 26px;
+    }
+
+    .account-btn span{
+        display: none;
+    }
+
+    .account-dropdown{
+        width: 270px;
+    }
+
+}
+
+/* ---------- Tablets ---------- */
+
+@media (max-width: 900px){
+
+    .navbar{
+        height: 74px;
+    }
+
+    .mobile-menu{
+        display: block;
+        font-size: 28px;
+        cursor: pointer;
+        transition: .3s;
+    }
+
+    .mobile-menu:hover{
+        color: #b86b29;
+    }
+
+    nav{
+
+        position: fixed;
+
+        top: 74px;
+        left: -100%;
+
+        width: 280px;
+
+        height: calc(100vh - 74px);
+
+        background: rgba(255,255,255,.98);
+
+        backdrop-filter: blur(18px);
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: flex-start;
+
+        align-items: flex-start;
+
+        padding: 40px 30px;
+
+        gap: 30px;
+
+        transition: .35s ease;
+
+        box-shadow: 8px 0 35px rgba(0,0,0,.08);
+    }
+
+    nav.active{
+        left: 0;
+    }
+
+    nav a{
+        font-size: 16px;
+        width: 100%;
+    }
+
+    .login-btn{
+        display: none;
+    }
+
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 768px){
+
+    .navbar{
+        padding: 0 18px;
+    }
+
+    .logo{
+        font-size: 22px;
+        letter-spacing: 1px;
+    }
+
+    .nav-actions{
+        gap: 14px;
+    }
+
+    .nav-icon{
+        font-size: 21px;
+    }
+
+    .avatar-circle{
+        width: 38px;
+        height: 38px;
+    }
+
+    .account-dropdown{
+
+        width: 260px;
+
+        right: -15px;
+
+        top: 58px;
+    }
+
+    .dropdown-header{
+        padding: 18px;
+    }
+
+    .dropdown-item{
+        padding: 14px 18px;
+    }
+
+}
+
+/* ---------- Small Phones ---------- */
+
+@media (max-width: 576px){
+
+    .navbar{
+        height: 70px;
+    }
+
+    nav{
+        top: 70px;
+        height: calc(100vh - 70px);
+        width: 250px;
+    }
+
+    .logo{
+        font-size: 20px;
+    }
+
+    .cart-badge{
+
+        min-width: 18px;
+
+        height: 18px;
+
+        font-size: 10px;
+    }
+
+    .account-dropdown{
+
+        width: 240px;
+
+        right: -20px;
+    }
+
+    .profile-avatar{
+
+        width: 46px;
+        height: 46px;
+
+        font-size: 18px;
+    }
+
+    .dropdown-header h4{
+        font-size: 15px;
+    }
+
+    .dropdown-header p{
+        font-size: 11px;
+    }
+
+}
+
+/* ---------- Very Small Devices ---------- */
+
+@media (max-width: 400px){
+
+    .navbar{
+        padding: 0 12px;
+    }
+
+    .logo{
+        font-size: 18px;
+    }
+
+    .nav-actions{
+        gap: 10px;
+    }
+
+    .account-dropdown{
+
+        width: 220px;
+
+        right: -15px;
+    }
+
+}
+
+/* ==========================================
+   SMOOTH ANIMATIONS
+========================================== */
+
+.navbar,
+.account-dropdown,
+.account-btn,
+.dropdown-item,
+.logo,
+nav a,
+.nav-icon,
+.cart-wrapper,
+.login-btn{
+    transition: all .3s ease;
+}
+
+/* ==========================================
+   HOVER LIFT
+========================================== */
+
+.cart-wrapper:hover,
+.account-btn:hover,
+.login-btn:hover{
+
+    transform: translateY(-2px);
+}
+
+/* ==========================================
+   REMOVE BLUE TAP HIGHLIGHT
+========================================== */
+
+*{
+    -webkit-tap-highlight-color: transparent;
+}
