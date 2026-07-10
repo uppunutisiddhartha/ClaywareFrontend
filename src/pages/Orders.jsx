@@ -49,7 +49,7 @@ function Orders() {
 
             const response = await axios.get(
 
-                "http://127.0.0.1:8000/api/user/user-order-history/",
+                "https://claywarebackend.onrender.com/api/user/user-order-history/",
 
                 {
                     headers: {

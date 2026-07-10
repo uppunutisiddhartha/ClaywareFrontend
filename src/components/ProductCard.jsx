@@ -29,7 +29,7 @@ function ProductCard() {
         try {
 
             const response = await axios.get(
-                "http://127.0.0.1:8000/api/accounts/home-page/"
+                "https://claywarebackend.onrender.com/api/accounts/home-page/"
             );
 
             const data = response.data.products || [];

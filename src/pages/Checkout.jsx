@@ -68,7 +68,7 @@ function Checkout() {
 
   const fetchCart = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/user/viewcart/", {
+      const res = await axios.get("https://claywarebackend.onrender.com/api/user/viewcart/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -87,7 +87,7 @@ function Checkout() {
   const fetchAddresses = async () => {
     try {
       const res = await axios.get(
-        "http://127.0.0.1:8000/api/user/user-addresses/",
+        "https://claywarebackend.onrender.com/api/user/user-addresses/",
         {
           headers: {
             Authorization: `Token ${token}`,
@@ -141,7 +141,7 @@ function Checkout() {
 
     try {
       await axios.post(
-        "http://127.0.0.1:8000/api/user/add-address/",
+        "https://claywarebackend.onrender.com/api/user/add-address/",
         formData,
         {
           headers: {
@@ -188,7 +188,7 @@ function Checkout() {
         }
 
         const res = await axios.post(
-          "http://127.0.0.1:8000/api/payments/create-order/",
+          "https://claywarebackend.onrender.com/api/payments/create-order/",
           {
             order_id: orderId,
           },
@@ -212,7 +212,7 @@ const options = {
   handler: async function (response) {
     try {
       const verify = await axios.post(
-        "http://127.0.0.1:8000/api/payments/verify/",
+        "https://claywarebackend.onrender.com/api/payments/verify/",
         {
           razorpay_order_id: response.razorpay_order_id,
           razorpay_payment_id: response.razorpay_payment_id,
@@ -258,7 +258,7 @@ const options = {
       try {
 
         await axios.post(
-          "http://127.0.0.1:8000/api/payments/payment-failed/",
+          "https://claywarebackend.onrender.com/api/payments/payment-failed/",
           {
             order_id: orderId,
           },
@@ -295,7 +295,7 @@ razorpay.on("payment.failed", async function (response) {
   try {
 
     await axios.post(
-      "http://127.0.0.1:8000/api/payments/payment-failed/",
+      "https://claywarebackend.onrender.com/api/payments/payment-failed/",
       {
         order_id: orderId,
       },
@@ -345,7 +345,7 @@ razorpay.open();
       }, 2700);
 
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/order/checkout/",
+        "https://claywarebackend.onrender.com//api/order/checkout/",
         {
           address_id: selectedAddress,
           payment_method: paymentMethod,

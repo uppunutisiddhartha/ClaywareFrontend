@@ -178,7 +178,7 @@ function ProductDetails() {
       setAddingToCart(true);
 
       const response = await axios.post(
-        `http://127.0.0.1:8000/api/user/addtocart/${product.id}/`,
+        `https://claywarebackend.onrender.com/api/user/addtocart/${product.id}/`,
         {
           quantity: quantity,
           variant_id: selectedVariant?.isBase

@@ -21,7 +21,7 @@ function Cart() {
   const fetchCart = async () => {
     try {
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/user/viewcart/",
+        "https://claywarebackend.onrender.com/api/user/viewcart/",
         {
           headers: {
             Authorization: `Token ${token}`,
@@ -47,7 +47,7 @@ function Cart() {
   const increaseQuantity = async (productId) => {
     try {
       await axios.post(
-        `http://127.0.0.1:8000/api/user/addtocart/${productId}/`,
+        `https://claywarebackend.onrender.com/api/user/addtocart/${productId}/`,
         {},
         {
           headers: {
@@ -70,7 +70,7 @@ function Cart() {
   const decreaseQuantity = async (cartItemId) => {
     try {
       await axios.delete(
-        `http://127.0.0.1:8000/api/user/remove-cart-item/${cartItemId}/`,
+        `https://claywarebackend.onrender.com/api/user/remove-cart-item/${cartItemId}/`,
         {
           headers: {
             Authorization: `Token ${token}`,
