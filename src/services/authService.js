@@ -1,19 +1,19 @@
-import api from "../api/axios";
+import axios from "axios";
 
-export const loginUser = async (data) => {
-    const response = await api.post(
+
+const API = axios.create({
+    baseURL: "https://claywarebackend.onrender.com/api/"
+});
+
+
+export const loginUser = async (credentials)=>{
+
+    const response = await API.post(
         "accounts/login/",
-        data
+        credentials
     );
 
-    return response.data;
-};
-
-export const userRegister = async (data) => {
-    const response = await api.post(
-        "/accounts/user-register/",
-        data
-    );
 
     return response.data;
+
 };
