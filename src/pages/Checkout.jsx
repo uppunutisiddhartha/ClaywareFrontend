@@ -188,7 +188,7 @@ function Checkout() {
         }
 
         const res = await axios.post(
-          "https://claywarebackend.onrender.com/api/payments/create-order",
+          "https://claywarebackend.onrender.com/api/payments/create-order/",
           {
             order_id: orderId,
           },
@@ -212,7 +212,7 @@ const options = {
   handler: async function (response) {
     try {
       const verify = await axios.post(
-        "https://claywarebackend.onrender.com/api/payments/verify",
+        "https://claywarebackend.onrender.com/api/payments/verify/",
         {
           razorpay_order_id: response.razorpay_order_id,
           razorpay_payment_id: response.razorpay_payment_id,
