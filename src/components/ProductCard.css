@@ -221,9 +221,9 @@ body{
 
     align-items:center;
 
-    gap:8px;
+    gap:5px;
 
-    padding:12px;
+    padding:10px;
 
     background:#fff;
 
@@ -231,8 +231,8 @@ body{
 
 .thumbnail-row img{
 
-    width:48px;
-    height:48px;
+    width:46px;
+    height:46px;
 
     border-radius:10px;
 
