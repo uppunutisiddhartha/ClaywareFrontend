@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -8,6 +8,7 @@ import WhyChooseUs from "../components/WhyChooseUs";
 
 function ProductDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,9 +40,7 @@ function ProductDetails() {
         setProduct(data);
 
         const imgs =
-          data.product_images?.map((img) => img.image) ||
-          data.images ||
-          [];
+          data.product_images?.map((img) => img.image) || data.images || [];
 
         if (imgs.length > 0) {
           setSelectedImage(imgs[0]);
@@ -94,9 +93,7 @@ function ProductDetails() {
   }
 
   const images =
-    product.product_images?.map((i) => i.image) ||
-    product.images ||
-    [];
+    product.product_images?.map((i) => i.image) || product.images || [];
 
   // ==========================
   // Standard + Variants
@@ -126,9 +123,7 @@ function ProductDetails() {
       : mrp;
 
   const discount =
-    mrp > sellingPrice
-      ? Math.round(((mrp - sellingPrice) / mrp) * 100)
-      : 0;
+    mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
 
   const stock = Number(selectedVariant?.stock_quantity || 0);
 
@@ -181,15 +176,13 @@ function ProductDetails() {
         `https://claywarebackend.onrender.com/api/user/addtocart/${product.id}/`,
         {
           quantity: quantity,
-          variant_id: selectedVariant?.isBase
-            ? null
-            : selectedVariant.id,
+          variant_id: selectedVariant?.isBase ? null : selectedVariant.id,
         },
         {
           headers: {
             Authorization: `Token ${token}`,
           },
-        }
+        },
       );
 
       alert(response.data.message);
@@ -204,8 +197,7 @@ function ProductDetails() {
         alert("Only customers can add products to cart.");
       } else {
         alert(
-          error.response?.data?.message ||
-            "Unable to add product to cart."
+          error.response?.data?.message || "Unable to add product to cart.",
         );
       }
     } finally {
@@ -213,37 +205,48 @@ function ProductDetails() {
     }
   };
 
-    return (
+  // handlebuy Now
+
+  const handleBuyNow = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Please login first.");
+      navigate("/login");
+      return;
+    }
+
+    navigate("/checkout", {
+      state: {
+        buyNow: true,
+        product_id: product.id,
+        variant_id: selectedVariant?.isBase ? null : selectedVariant.id,
+        quantity: quantity,
+      },
+    });
+  };
+
+  return (
     <div className="pdp-page">
       <Navbar />
 
       <div className="pdp-container">
-
         {/* LEFT */}
         <div className="pdp-left">
-
           <div className="pdp-thumbs">
             {images.map((img, index) => (
               <button
                 key={index}
-                className={`thumb-btn ${
-                  selectedImage === img ? "active" : ""
-                }`}
+                className={`thumb-btn ${selectedImage === img ? "active" : ""}`}
                 onClick={() => setSelectedImage(img)}
               >
-                <img
-                  src={img}
-                  alt={`thumb-${index}`}
-                  className="thumb"
-                />
+                <img src={img} alt={`thumb-${index}`} className="thumb" />
               </button>
             ))}
           </div>
 
           <div
-            className={`pdp-image-box ${
-              isZooming ? "zooming" : ""
-            }`}
+            className={`pdp-image-box ${isZooming ? "zooming" : ""}`}
             onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={resetZoom}
@@ -256,114 +259,77 @@ function ProductDetails() {
                 style={zoomStyle}
               />
             ) : (
-              <div className="no-image">
-                No Image Available
-              </div>
+              <div className="no-image">No Image Available</div>
             )}
           </div>
-
         </div>
 
         {/* RIGHT */}
         <div className="pdp-right">
+          <p className="brand">{product.seller}</p>
 
-          <p className="brand">
-            {product.seller}
-          </p>
-
-          <h1 className="title">
-            {product.productname}
-          </h1>
+          <h1 className="title">{product.productname}</h1>
 
           <div className="price-box">
-
-            <span className="price">
-              ₹{sellingPrice}
-            </span>
+            <span className="price">₹{sellingPrice}</span>
 
             {discount > 0 && (
               <>
-                <span className="mrp">
-                  ₹{mrp}
-                </span>
+                <span className="mrp">₹{mrp}</span>
 
-                <span className="off">
-                  {discount}% OFF
-                </span>
+                <span className="off">{discount}% OFF</span>
               </>
             )}
-
           </div>
 
           <p className={`stock-pill ${inStock ? "in" : "out"}`}>
-            {inStock
-              ? `${stock} in stock`
-              : "Out of stock"}
+            {inStock ? `${stock} in stock` : "Out of stock"}
           </p>
 
           {/* VARIANTS */}
 
           <div className="variants">
-
             <h4>Available Options</h4>
 
             <div className="variant-list">
-
               {allVariants.map((variant) => {
-
                 const active =
                   selectedVariant?.id === variant.id &&
                   selectedVariant?.isBase === variant.isBase;
 
                 return (
-
                   <button
-  key={variant.isBase ? "base" : variant.id}
-  className={`variant ${
-    active ? "active" : ""
-  } ${
-    Number(variant.stock_quantity) <= 0
-      ? "out-of-stock"
-      : ""
-  }`}
-  onClick={() => setSelectedVariant(variant)}
->
+                    key={variant.isBase ? "base" : variant.id}
+                    className={`variant ${active ? "active" : ""} ${
+                      Number(variant.stock_quantity) <= 0 ? "out-of-stock" : ""
+                    }`}
+                    onClick={() => setSelectedVariant(variant)}
+                  >
+                    <span className="variant-capacity">{variant.capacity}</span>
 
-  <span className="variant-capacity">
-    {variant.capacity}
-  </span>
+                    <span className="variant-price">
+                      ₹{variant.discount_price || variant.price}
+                    </span>
 
-  <span className="variant-price">
-    ₹{variant.discount_price || variant.price}
-  </span>
+                    {variant.discount_price &&
+                      Number(variant.discount_price) <
+                        Number(variant.price) && (
+                        <span className="variant-mrp">₹{variant.price}</span>
+                      )}
 
-  {variant.discount_price &&
-    Number(variant.discount_price) <
-      Number(variant.price) && (
-      <span className="variant-mrp">
-        ₹{variant.price}
-      </span>
-  )}
-
-  <span className="variant-stock">
-    {variant.stock_quantity > 0
-      ? `${variant.stock_quantity} Available`
-      : "Out of Stock"}
-  </span>
-
-</button>
-
+                    <span className="variant-stock">
+                      {variant.stock_quantity > 0
+                        ? `${variant.stock_quantity} Available`
+                        : "Out of Stock"}
+                    </span>
+                  </button>
                 );
               })}
-
             </div>
-
           </div>
-                    {/* ABOUT PRODUCT */}
+          {/* ABOUT PRODUCT */}
           <div className="about-block">
-            <h4 className="section-title">
-              About this product
-            </h4>
+            <h4 className="section-title">About this product</h4>
 
             <div className="about-card">
               <p className="about-text">
@@ -376,57 +342,36 @@ function ProductDetails() {
 
           {/* QUANTITY */}
           <div className="quantity-block">
-
             <h4>Quantity</h4>
 
             <div className="quantity-stepper">
-
-              <button
-                onClick={decreaseQty}
-                disabled={!inStock}
-              >
+              <button onClick={decreaseQty} disabled={!inStock}>
                 −
               </button>
 
-              <span className="quantity-value">
-                {quantity}
-              </span>
+              <span className="quantity-value">{quantity}</span>
 
-              <button
-                onClick={increaseQty}
-                disabled={!inStock}
-              >
+              <button onClick={increaseQty} disabled={!inStock}>
                 +
               </button>
-
             </div>
-
           </div>
 
           {/* ACTIONS */}
           <div className="actions">
-
             <button
               className="add-to-cart"
               disabled={!inStock || addingToCart}
               onClick={handleAddToCart}
             >
-              {addingToCart
-                ? "Adding..."
-                : "Add to Cart"}
+              {addingToCart ? "Adding..." : "Add to Cart"}
             </button>
 
-            <button
-              className="buy"
-              disabled={!inStock}
-            >
+            <button className="buy" disabled={!inStock} onClick={handleBuyNow}>
               Buy Now
             </button>
-
           </div>
-
         </div>
-
       </div>
 
       <div className="Why">
@@ -434,7 +379,6 @@ function ProductDetails() {
       </div>
 
       <Footer />
-
     </div>
   );
 }

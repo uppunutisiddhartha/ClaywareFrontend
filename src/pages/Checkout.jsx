@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { loadRazorpay } from "../utils/loadRazorpay";
 
@@ -37,6 +37,9 @@ const EMPTY_FORM = {
 function Checkout() {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const buyNowData = location.state;
 
   const [cart, setCart] = useState(null);
 
@@ -68,11 +71,14 @@ function Checkout() {
 
   const fetchCart = async () => {
     try {
-      const res = await axios.get("https://claywarebackend.onrender.com/api/user/viewcart/", {
-        headers: {
-          Authorization: `Token ${token}`,
+      const res = await axios.get(
+        "https://claywarebackend.onrender.com/api/user/viewcart/",
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+          },
         },
-      });
+      );
 
       setCart(res.data);
     } catch (err) {
@@ -111,7 +117,11 @@ function Checkout() {
 
   useEffect(() => {
     const load = async () => {
-      await Promise.all([fetchCart(), fetchAddresses()]);
+      if (buyNowData?.buyNow) {
+        await fetchAddresses();
+      } else {
+        await Promise.all([fetchCart(), fetchAddresses()]);
+      }
 
       setLoading(false);
     };
@@ -201,119 +211,111 @@ function Checkout() {
 
         const data = res.data;
         console.log(data);
-const options = {
-  key: data.key,
-  amount: data.amount,
-  currency: data.currency,
-  name: "ClayWare",
-  description: "ClayWare Order",
-  order_id: data.razorpay_order_id,
+        const options = {
+          key: data.key,
+          amount: data.amount,
+          currency: data.currency,
+          name: "ClayWare",
+          description: "ClayWare Order",
+          order_id: data.razorpay_order_id,
 
-  handler: async function (response) {
-    try {
-      const verify = await axios.post(
-        "https://claywarebackend.onrender.com/api/payments/verify/",
-        {
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-        },
-        {
-          headers: {
-            Authorization: `Token ${token}`,
+          handler: async function (response) {
+            try {
+              const verify = await axios.post(
+                "https://claywarebackend.onrender.com/api/payments/verify/",
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                },
+                {
+                  headers: {
+                    Authorization: `Token ${token}`,
+                  },
+                },
+              );
+
+              console.log("Payment Verified", verify.data);
+
+              // Hide loader
+              setShowOverlay(false);
+              setPlacingOrder(false);
+              setProcessingPayment(false);
+
+              navigate("/order-success");
+            } catch (err) {
+              console.log(err);
+
+              setShowOverlay(false);
+              setPlacingOrder(false);
+              setProcessingPayment(false);
+
+              alert("Payment verification failed.");
+            }
           },
-        }
-      );
 
-      console.log("Payment Verified", verify.data);
+          modal: {
+            ondismiss: async function () {
+              console.log("Payment Cancelled");
 
-      // Hide loader
-      setShowOverlay(false);
-      setPlacingOrder(false);
-      setProcessingPayment(false);
+              setShowOverlay(false);
+              setPlacingOrder(false);
+              setProcessingPayment(false);
 
-      navigate("/order-success");
+              try {
+                await axios.post(
+                  "https://claywarebackend.onrender.com/api/payments/payment-failed/",
+                  {
+                    order_id: orderId,
+                  },
+                  {
+                    headers: {
+                      Authorization: `Token ${token}`,
+                    },
+                  },
+                );
+              } catch (err) {
+                console.log(err);
+              }
 
-    } catch (err) {
-
-      console.log(err);
-
-      setShowOverlay(false);
-      setPlacingOrder(false);
-      setProcessingPayment(false);
-
-      alert("Payment verification failed.");
-    }
-  },
-
-  modal: {
-    ondismiss: async function () {
-
-      console.log("Payment Cancelled");
-
-      setShowOverlay(false);
-      setPlacingOrder(false);
-      setProcessingPayment(false);
-
-      try {
-
-        await axios.post(
-          "https://claywarebackend.onrender.com/api/payments/payment-failed/",
-          {
-            order_id: orderId,
-          },
-          {
-            headers: {
-              Authorization: `Token ${token}`,
+              alert("Payment cancelled.");
             },
+          },
+
+          theme: {
+            color: "#8B5E3C",
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+
+        razorpay.on("payment.failed", async function (response) {
+          console.log(response.error);
+
+          setShowOverlay(false);
+          setPlacingOrder(false);
+          setProcessingPayment(false);
+
+          try {
+            await axios.post(
+              "https://claywarebackend.onrender.com/api/payments/payment-failed/",
+              {
+                order_id: orderId,
+              },
+              {
+                headers: {
+                  Authorization: `Token ${token}`,
+                },
+              },
+            );
+          } catch (err) {
+            console.log(err);
           }
-        );
 
-      } catch (err) {
-        console.log(err);
-      }
+          alert("Payment Failed.");
+        });
 
-      alert("Payment cancelled.");
-    },
-  },
-
-  theme: {
-    color: "#8B5E3C",
-  },
-};
-
-const razorpay = new window.Razorpay(options);
-
-razorpay.on("payment.failed", async function (response) {
-
-  console.log(response.error);
-
-  setShowOverlay(false);
-  setPlacingOrder(false);
-  setProcessingPayment(false);
-
-  try {
-
-    await axios.post(
-      "https://claywarebackend.onrender.com/api/payments/payment-failed/",
-      {
-        order_id: orderId,
-      },
-      {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      }
-    );
-
-  } catch (err) {
-    console.log(err);
-  }
-
-  alert("Payment Failed.");
-});
-
-razorpay.open();
+        // razorpay.open();
 
         razorpay.open();
       } catch (err) {
@@ -344,19 +346,26 @@ razorpay.open();
         setLoadingText("Redirecting securely...");
       }, 2700);
 
+      const payload = {
+        address_id: selectedAddress,
+        payment_method: paymentMethod,
+      };
+
+      if (buyNowData?.buyNow) {
+        payload.product_id = buyNowData.product_id;
+        payload.variant_id = buyNowData.variant_id;
+        payload.quantity = buyNowData.quantity;
+      }
+
       const res = await axios.post(
         "https://claywarebackend.onrender.com/api/order/checkout/",
-        {
-          address_id: selectedAddress,
-          payment_method: paymentMethod,
-        },
+        payload,
         {
           headers: {
             Authorization: `Token ${token}`,
           },
         },
       );
-
       setTimeout(async () => {
         if (paymentMethod === "COD") {
           navigate("/order-success");
