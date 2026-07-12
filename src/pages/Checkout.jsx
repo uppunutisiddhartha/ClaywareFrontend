@@ -41,7 +41,13 @@ function Checkout() {
 
   const buyNowData = location.state;
 
-  const [cart, setCart] = useState(null);
+const [cart, setCart] = useState({
+  cart_items: [],
+  total_items: 0,
+  total_original_price: 0,
+  total_discount_price: 0,
+  total_savings: 0,
+});
 
   const [addresses, setAddresses] = useState([]);
 
@@ -116,18 +122,51 @@ function Checkout() {
   };
 
   useEffect(() => {
-    const load = async () => {
-      if (buyNowData?.buyNow) {
-        await fetchAddresses();
-      } else {
-        await Promise.all([fetchCart(), fetchAddresses()]);
-      }
+  const load = async () => {
 
-      setLoading(false);
-    };
+    if (buyNowData?.buyNow) {
 
-    load();
-  }, []);
+      setCart({
+        cart_items: [
+          {
+            cart_item_id: "buy-now",
+            product_name: buyNowData.product_name,
+            product_image: buyNowData.product_image,
+            quantity: buyNowData.quantity,
+            variant_capacity: buyNowData.variant_capacity || "Standard",
+            subtotal_discount_price:
+              buyNowData.price * buyNowData.quantity,
+          },
+        ],
+
+        total_items: buyNowData.quantity,
+
+        total_original_price:
+          buyNowData.price * buyNowData.quantity,
+
+        total_discount_price:
+          buyNowData.price * buyNowData.quantity,
+
+        total_savings: 0,
+      });
+
+      await fetchAddresses();
+
+    } else {
+
+      await Promise.all([
+        fetchCart(),
+        fetchAddresses(),
+      ]);
+
+    }
+
+    setLoading(false);
+  };
+
+  load();
+
+}, []);
 
   // ===================================
   // FORM INPUT

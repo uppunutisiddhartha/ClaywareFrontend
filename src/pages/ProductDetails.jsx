@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "./styles/ProductDetails.css";
 import WhyChooseUs from "../components/WhyChooseUs";
+import api from "../api/axios";
 
 function ProductDetails() {
   const { id } = useParams();
@@ -172,18 +173,10 @@ function ProductDetails() {
     try {
       setAddingToCart(true);
 
-      const response = await axios.post(
-        `https://claywarebackend.onrender.com/api/user/addtocart/${product.id}/`,
-        {
-          quantity: quantity,
-          variant_id: selectedVariant?.isBase ? null : selectedVariant.id,
-        },
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
-      );
+      const response = await api.post(`/user/addtocart/${product.id}/`, {
+        quantity,
+        variant_id: selectedVariant?.isBase ? null : selectedVariant.id,
+      });
 
       alert(response.data.message);
 

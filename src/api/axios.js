@@ -2,8 +2,9 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.PROD
-    ? "https://clayware-1.onrender.com/api/"
-    : "https://clayware-frontend.vercel.app/",
+    ? import.meta.env.VITE_PRODUCTION_API
+    : import.meta.env.VITE_LOCAL_API,
+
   headers: {
     "Content-Type": "application/json",
   },

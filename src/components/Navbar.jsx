@@ -24,7 +24,7 @@ import {
     useRef,
 } from "react";
 
-import axios from "axios";
+import api from "../api/axios";
 
 function Navbar() {
 
@@ -93,35 +93,27 @@ function Navbar() {
     // -------------------------------
     // Fetch Cart Count
     // -------------------------------
+const fetchCartCount = async () => {
 
-    const fetchCartCount = async () => {
+    const token = localStorage.getItem("token");
 
-        const token = localStorage.getItem("token");
+    if (!token) return;
 
-        if (!token) return;
+    try {
 
-        try {
+        const response = await api.get("/user/viewcart/");
 
-            const response = await axios.get(
-                "https://claywarebackend.onrender.com/api/user/viewcart/",
-                {
-                    headers: {
-                        Authorization: `Token ${token}`,
-                    },
-                }
-            );
+        setCartCount(response.data.total_items);
 
-            setCartCount(response.data.total_items);
+    } catch (error) {
 
-        } catch (error) {
+        console.log(error);
 
-            console.log(error);
+        setCartCount(0);
 
-            setCartCount(0);
+    }
 
-        }
-
-    };
+};
 
     // -------------------------------
     // Logout

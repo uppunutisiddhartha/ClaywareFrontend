@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import {
     FaHeart,
@@ -28,9 +29,7 @@ function ProductCard() {
 
         try {
 
-            const response = await axios.get(
-                "https://claywarebackend.onrender.com/api/accounts/home-page/"
-            );
+      const response = await api.get("/accounts/home-page/");
 
             const data = response.data.products || [];
 
@@ -97,13 +96,7 @@ function ProductCard() {
 
     };
 
-    const handleAddToCart = (e, product) => {
-
-        e.stopPropagation();
-
-        console.log("Add To Cart", product);
-
-    };
+    
 
     if (loading) {
 
@@ -225,9 +218,9 @@ function ProductCard() {
 
                             <div className="premium-content">
 
-                                <span className="category">
+                                {/* <span className="category">
                                     {product.item || "Clayware"}
-                                </span>
+                                </span> */}
 
                                 <h3>
                                     {product.productname}
@@ -308,7 +301,8 @@ function ProductCard() {
                                     </div>
 
                                 )}
-
+                                
+{/* 
                                 <button
                                     className="cart-btn"
                                     disabled={
@@ -335,7 +329,7 @@ function ProductCard() {
                                     </span>
 
                                 </button>
-
+ */}
                             </div>
 
                         </div>
