@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+
+import api from "../api/axios";
 import { loadRazorpay } from "../utils/loadRazorpay";
 
 import {
-  FiMapPin,
   FiPlus,
   FiCreditCard,
   FiTruck,
   FiCheckCircle,
   FiLock,
 } from "react-icons/fi";
+
 import {
   SiVisa,
   SiMastercard,
@@ -18,9 +19,12 @@ import {
   SiPaytm,
   SiPhonepe,
 } from "react-icons/si";
+
 import { FaMoneyBillWave } from "react-icons/fa";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
 import "./styles/Checkout.css";
 
 const EMPTY_FORM = {
@@ -35,22 +39,20 @@ const EMPTY_FORM = {
 };
 
 function Checkout() {
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const location = useLocation();
 
   const buyNowData = location.state;
 
-const [cart, setCart] = useState({
-  cart_items: [],
-  total_items: 0,
-  total_original_price: 0,
-  total_discount_price: 0,
-  total_savings: 0,
-});
+  const [cart, setCart] = useState({
+    cart_items: [],
+    total_items: 0,
+    total_original_price: 0,
+    total_discount_price: 0,
+    total_savings: 0,
+  });
 
   const [addresses, setAddresses] = useState([]);
-
   const [selectedAddress, setSelectedAddress] = useState(null);
 
   const [paymentMethod, setPaymentMethod] = useState("COD");
@@ -64,116 +66,105 @@ const [cart, setCart] = useState({
   const [showOverlay, setShowOverlay] = useState(false);
 
   const [loadingText, setLoadingText] = useState(
-    "Preparing your ClayWare order...",
+    "Preparing your ClayWare order..."
   );
 
   const [showForm, setShowForm] = useState(false);
 
+  // Missing in your code
+  const [showAddressList, setShowAddressList] = useState(false);
+
   const [formData, setFormData] = useState(EMPTY_FORM);
 
-  // ===================================
+  // =====================================
   // FETCH CART
-  // ===================================
+  // =====================================
 
   const fetchCart = async () => {
     try {
-      const res = await axios.get(
-        "https://claywarebackend.onrender.com/api/user/viewcart/",
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
-      );
-
+      const res = await api.get("/user/viewcart/");
       setCart(res.data);
     } catch (err) {
-      console.log(err);
+      console.error("Cart Error:", err);
     }
   };
 
-  // ===================================
-  // FETCH ADDRESS
-  // ===================================
+  // =====================================
+  // FETCH ADDRESSES
+  // =====================================
 
   const fetchAddresses = async () => {
     try {
-      const res = await axios.get(
-        "https://claywarebackend.onrender.com/api/user/user-addresses/",
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
-      );
+      const res = await api.get("/user/user-addresses/");
 
       const list = res.data.addresses || [];
 
       setAddresses(list);
 
-      const defaultAddress = list.find((a) => a.is_default) || list[0];
+      const defaultAddress =
+        list.find((item) => item.is_default) || list[0];
 
       if (defaultAddress) {
         setSelectedAddress(defaultAddress.address_id);
       }
     } catch (err) {
-      console.log(err);
+      console.error("Address Error:", err);
     }
   };
+
+  // =====================================
+  // INITIAL LOAD
+  // =====================================
 
   useEffect(() => {
-  const load = async () => {
+    const loadData = async () => {
+      try {
+        if (buyNowData?.buyNow) {
+          setCart({
+            cart_items: [
+              {
+                cart_item_id: "buy-now",
+                product_name: buyNowData.product_name,
+                product_image: buyNowData.product_image,
+                quantity: buyNowData.quantity,
+                variant_capacity:
+                  buyNowData.variant_capacity || "Standard",
+                subtotal_discount_price:
+                  buyNowData.price * buyNowData.quantity,
+              },
+            ],
 
-    if (buyNowData?.buyNow) {
+            total_items: buyNowData.quantity,
 
-      setCart({
-        cart_items: [
-          {
-            cart_item_id: "buy-now",
-            product_name: buyNowData.product_name,
-            product_image: buyNowData.product_image,
-            quantity: buyNowData.quantity,
-            variant_capacity: buyNowData.variant_capacity || "Standard",
-            subtotal_discount_price:
+            total_original_price:
               buyNowData.price * buyNowData.quantity,
-          },
-        ],
 
-        total_items: buyNowData.quantity,
+            total_discount_price:
+              buyNowData.price * buyNowData.quantity,
 
-        total_original_price:
-          buyNowData.price * buyNowData.quantity,
+            total_savings: 0,
+          });
 
-        total_discount_price:
-          buyNowData.price * buyNowData.quantity,
+          await fetchAddresses();
+        } else {
+          await Promise.all([
+            fetchCart(),
+            fetchAddresses(),
+          ]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        total_savings: 0,
-      });
-
-      await fetchAddresses();
-
-    } else {
-
-      await Promise.all([
-        fetchCart(),
-        fetchAddresses(),
-      ]);
-
-    }
-
-    setLoading(false);
-  };
-
-  load();
-
-}, []);
-
-  // ===================================
-  // FORM INPUT
-  // ===================================
+    loadData();
+  }, []);
+    // =====================================
+  // HANDLE FORM INPUT
+  // =====================================
 
   const handleChange = (e) => {
-    const { name, value, checked, type } = e.target;
+    const { name, value, type, checked } = e.target;
 
     setFormData((prev) => ({
       ...prev,
@@ -181,733 +172,1140 @@ const [cart, setCart] = useState({
     }));
   };
 
-  // ===================================
-  // SAVE ADDRESS
-  // ===================================
 
-  const saveAddress = async (e) => {
-    e.preventDefault();
+  // =====================================
+  // ADD NEW ADDRESS
+  // =====================================
 
+  const addAddress = async () => {
     try {
-      await axios.post(
-        "https://claywarebackend.onrender.com/api/user/add-address/",
-        formData,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
+      const res = await api.post(
+        "/user/add-address/",
+        formData
       );
+
+      alert("Address added successfully");
 
       setShowForm(false);
 
       setFormData(EMPTY_FORM);
 
-      fetchAddresses();
+      await fetchAddresses();
+
+      setSelectedAddress(
+        res.data.address_id
+      );
+
     } catch (err) {
-      alert(err.response?.data?.message || "Unable to save address.");
+      console.error(
+        "Add Address Error:",
+        err
+      );
     }
   };
 
-  // ===================================
-  // PLACE ORDER
-  // ===================================
+
+  // =====================================
+  // CREATE ORDER
+  // =====================================
 
   const placeOrder = async () => {
-    if (placingOrder) return;
 
     if (!selectedAddress) {
-      alert("Please select an address.");
+      alert("Please select delivery address");
       return;
     }
 
-    // ===================================
-    // RAZORPAY PAYMENT
-    // ===================================
-
-    const handleRazorpayPayment = async (orderId) => {
-      try {
-        setProcessingPayment(true);
-
-        const loaded = await loadRazorpay();
-
-        if (!loaded) {
-          alert("Unable to load Razorpay.");
-          return;
-        }
-
-        const res = await axios.post(
-          "https://claywarebackend.onrender.com/api/payments/create-order/",
-          {
-            order_id: orderId,
-          },
-          {
-            headers: {
-              Authorization: `Token ${token}`,
-            },
-          },
-        );
-
-        const data = res.data;
-        console.log(data);
-        const options = {
-          key: data.key,
-          amount: data.amount,
-          currency: data.currency,
-          name: "ClayWare",
-          description: "ClayWare Order",
-          order_id: data.razorpay_order_id,
-
-          handler: async function (response) {
-            try {
-              const verify = await axios.post(
-                "https://claywarebackend.onrender.com/api/payments/verify/",
-                {
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                },
-                {
-                  headers: {
-                    Authorization: `Token ${token}`,
-                  },
-                },
-              );
-
-              console.log("Payment Verified", verify.data);
-
-              // Hide loader
-              setShowOverlay(false);
-              setPlacingOrder(false);
-              setProcessingPayment(false);
-
-              navigate("/order-success");
-            } catch (err) {
-              console.log(err);
-
-              setShowOverlay(false);
-              setPlacingOrder(false);
-              setProcessingPayment(false);
-
-              alert("Payment verification failed.");
-            }
-          },
-
-          modal: {
-            ondismiss: async function () {
-              console.log("Payment Cancelled");
-
-              setShowOverlay(false);
-              setPlacingOrder(false);
-              setProcessingPayment(false);
-
-              try {
-                await axios.post(
-                  "https://claywarebackend.onrender.com/api/payments/payment-failed/",
-                  {
-                    order_id: orderId,
-                  },
-                  {
-                    headers: {
-                      Authorization: `Token ${token}`,
-                    },
-                  },
-                );
-              } catch (err) {
-                console.log(err);
-              }
-
-              alert("Payment cancelled.");
-            },
-          },
-
-          theme: {
-            color: "#8B5E3C",
-          },
-        };
-
-        const razorpay = new window.Razorpay(options);
-
-        razorpay.on("payment.failed", async function (response) {
-          console.log(response.error);
-
-          setShowOverlay(false);
-          setPlacingOrder(false);
-          setProcessingPayment(false);
-
-          try {
-            await axios.post(
-              "https://claywarebackend.onrender.com/api/payments/payment-failed/",
-              {
-                order_id: orderId,
-              },
-              {
-                headers: {
-                  Authorization: `Token ${token}`,
-                },
-              },
-            );
-          } catch (err) {
-            console.log(err);
-          }
-
-          alert("Payment Failed.");
-        });
-
-        // razorpay.open();
-
-        razorpay.open();
-      } catch (err) {
-        console.log(err);
-
-        alert("Unable to initiate payment.");
-      } finally {
-        setProcessingPayment(false);
-      }
-    };
 
     setPlacingOrder(true);
-
     setShowOverlay(true);
 
-    setLoadingText("Checking your address...");
 
     try {
-      setTimeout(() => {
-        setLoadingText("Packing handcrafted products...");
-      }, 800);
 
-      setTimeout(() => {
-        setLoadingText("Creating your order...");
-      }, 1700);
+      setLoadingText(
+        "Creating your ClayWare order..."
+      );
 
-      setTimeout(() => {
-        setLoadingText("Redirecting securely...");
-      }, 2700);
 
       const payload = {
+
         address_id: selectedAddress,
+
         payment_method: paymentMethod,
+
+
+        buy_now: buyNowData?.buyNow || false,
+
+
+        buy_now_product: buyNowData?.buyNow
+          ? {
+              product_id: buyNowData.product_id,
+              quantity: buyNowData.quantity,
+              variant_id:
+                buyNowData.variant_id,
+            }
+          : null,
+
       };
 
-      if (buyNowData?.buyNow) {
-        payload.product_id = buyNowData.product_id;
-        payload.variant_id = buyNowData.variant_id;
-        payload.quantity = buyNowData.quantity;
+
+      const res = await api.post(
+        "/order/checkout/",
+        payload
+      );
+
+
+      const order = res.data;
+
+
+      if (paymentMethod === "COD") {
+
+        setLoadingText(
+          "Order placed successfully..."
+        );
+
+
+        setTimeout(() => {
+
+          navigate(
+            `/order-success/${order.order_id}`
+          );
+
+        }, 1500);
+
+
+      } else {
+
+        await handleRazorpayPayment(
+          order.order_id
+        );
+
       }
 
-      const res = await axios.post(
-        "https://claywarebackend.onrender.com/api/order/checkout/",
-        payload,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
-      );
-      setTimeout(async () => {
-        if (paymentMethod === "COD") {
-          navigate("/order-success");
-        } else {
-          await handleRazorpayPayment(res.data.order_id);
-        }
-      }, 3200);
+
     } catch (err) {
-      console.log(err);
+
+      console.error(
+        "Order Error:",
+        err
+      );
+
+      alert(
+        "Unable to place order"
+      );
 
       setShowOverlay(false);
 
+    } finally {
+
       setPlacingOrder(false);
 
-      alert(err.response?.data?.message || "Unable to place order.");
     }
+
+  };
+    // =====================================
+  // RAZORPAY PAYMENT
+  // =====================================
+
+  const handleRazorpayPayment = async (orderId) => {
+
+    try {
+
+      setProcessingPayment(true);
+
+      setLoadingText(
+        "Opening secure payment..."
+      );
+
+
+      // Create Razorpay order
+
+      const razorpayRes = await api.post(
+        "/payments/create-razorpay-order/",
+        {
+          order_id: orderId,
+        }
+      );
+
+
+      const data = razorpayRes.data;
+
+
+      const loaded = await loadRazorpay();
+
+
+      if (!loaded) {
+
+        alert(
+          "Razorpay failed to load"
+        );
+
+        return;
+
+      }
+
+
+
+      const options = {
+
+        key: data.key,
+
+        amount: data.amount,
+
+        currency: "INR",
+
+        name: "ClayWare",
+
+        description:
+          "ClayWare Order Payment",
+
+
+        order_id:
+          data.razorpay_order_id,
+
+
+        handler: async function (
+          response
+        ) {
+
+
+          try {
+
+            setLoadingText(
+              "Verifying payment..."
+            );
+
+
+            const verifyRes =
+              await api.post(
+                "/payments/verify-payment/",
+                {
+
+                  razorpay_order_id:
+                    response.razorpay_order_id,
+
+
+                  razorpay_payment_id:
+                    response.razorpay_payment_id,
+
+
+                  razorpay_signature:
+                    response.razorpay_signature,
+
+
+                  order_id: orderId,
+
+                }
+              );
+
+
+            if (
+              verifyRes.data.success
+            ) {
+
+
+              setLoadingText(
+                "Payment successful..."
+              );
+
+
+              setTimeout(() => {
+
+                navigate(
+                  `/order-success/${orderId}`
+                );
+
+              },1500);
+
+
+            }
+
+
+          } catch(error){
+
+            console.error(
+              "Payment Verification Error:",
+              error
+            );
+
+            alert(
+              "Payment verification failed"
+            );
+
+          }
+
+        },
+
+
+        prefill: {
+
+          name:
+            selectedAddress?.full_name || "",
+
+          contact:
+            selectedAddress?.phone_number || "",
+
+        },
+
+
+        theme: {
+
+          color:"#b86b3c"
+
+        }
+
+      };
+
+
+
+      const razorpay =
+        new window.Razorpay(options);
+
+
+      razorpay.open();
+
+
+
+      razorpay.on(
+        "payment.failed",
+        function(response){
+
+          console.log(
+            response.error
+          );
+
+          alert(
+            "Payment failed"
+          );
+
+        }
+      );
+
+
+    } catch(error){
+
+      console.error(
+        "Razorpay Error:",
+        error
+      );
+
+      alert(
+        "Unable to start payment"
+      );
+
+
+    } finally {
+
+      setProcessingPayment(false);
+
+    }
+
   };
 
-  if (loading) {
+
+
+  // =====================================
+  // TOTAL PRICE
+  // =====================================
+
+
+  const finalAmount =
+    cart.total_discount_price;
+
+
+
+  // =====================================
+  // LOADING SCREEN
+  // =====================================
+
+  if(loading){
+
     return (
+
       <>
+
         <Navbar />
 
-        <div className="checkout-loading">
-          <div className="loading-pot">🏺</div>
 
-          <h2>Preparing Checkout...</h2>
+        <div className="checkout-loader">
+
+          <FiLock />
+
+          <h3>
+            Loading Checkout...
+          </h3>
+
         </div>
+
 
         <Footer />
+
       </>
+
     );
+
   }
-  return (
+    return (
+
     <>
+
       <Navbar />
 
-      {/* ==========================================
-            ORDER PLACING OVERLAY
-      =========================================== */}
-
-      {showOverlay && (
-        <div className="checkout-overlay">
-          <div className="overlay-card">
-            <div className="clay-loader">🏺</div>
-
-            <h2>{loadingText}</h2>
-
-            <div className="overlay-progress">
-              <span></span>
-            </div>
-
-            <p>
-              Please don't refresh this page while we prepare your handcrafted
-              order.
-            </p>
-          </div>
-        </div>
-      )}
 
       <div className="checkout-page">
-        {/* ===================================================
-                    LEFT SECTION
-        ==================================================== */}
 
-        <div className="checkout-left">
-          <div className="section-header">
-            <div>
-              <h2>Shipping Address</h2>
 
-              <p>Select where you'd like your ClayWare products delivered.</p>
-            </div>
+        <div className="checkout-container">
 
-            <button
-              className="add-address-btn"
-              onClick={() => setShowForm(!showForm)}
-            >
-              <FiPlus />
-              Add Address
-            </button>
-          </div>
 
-          {/* ======================================
-                  ADDRESS LIST
-          ======================================= */}
+          {/* =========================
+              LEFT SECTION
+          ========================== */}
 
-          <div className="address-list">
-            {addresses.length === 0 ? (
-              <div className="empty-address">
-                <FiMapPin size={45} />
 
-                <h3>No Address Found</h3>
+          <div className="checkout-left">
 
-                <p>Add your first delivery address to continue.</p>
+
+
+            {/* DELIVERY ADDRESS */}
+
+            <div className="checkout-card">
+
+
+              <div className="checkout-title">
+
+                <FiTruck />
+
+                <h2>
+                  Delivery Address
+                </h2>
+
+
               </div>
-            ) : (
-              addresses.map((addr) => (
-                <div
-                  key={addr.address_id}
-                  className={`address-card ${
-                    selectedAddress === addr.address_id ? "selected" : ""
-                  }`}
-                  onClick={() => setSelectedAddress(addr.address_id)}
-                >
-                  <div className="radio-box">
+
+
+
+              <button
+                className="add-address-btn"
+                onClick={() =>
+                  setShowForm(!showForm)
+                }
+              >
+
+                <FiPlus />
+
+                Add New Address
+
+              </button>
+
+
+
+
+              {/* ADDRESS LIST */}
+
+
+              <div className="address-list">
+
+
+                {addresses.map((address)=>(
+
+
+                  <div
+                    key={address.address_id}
+
+                    className={
+                      selectedAddress ===
+                      address.address_id
+
+                      ? "address-box active"
+
+                      : "address-box"
+                    }
+
+
+                    onClick={() =>
+                      setSelectedAddress(
+                        address.address_id
+                      )
+                    }
+
+                  >
+
+
                     <input
+
                       type="radio"
-                      checked={selectedAddress === addr.address_id}
+
+                      checked={
+                        selectedAddress ===
+                        address.address_id
+                      }
+
                       readOnly
+
                     />
-                  </div>
 
-                  <div className="address-info">
-                    <div className="address-top">
-                      <h3>{addr.full_name}</h3>
 
-                      {addr.is_default && (
-                        <span className="default-badge">
-                          <FiCheckCircle />
-                          Default
-                        </span>
-                      )}
+
+                    <div>
+
+
+                      <h4>
+
+                        {address.full_name}
+
+                      </h4>
+
+
+                      <p>
+
+                        {address.address_line}
+
+                      </p>
+
+
+                      <p>
+
+                        {address.city},
+                        {address.state}
+                        -
+                        {address.pincode}
+
+                      </p>
+
+
+                      <p>
+
+                        Phone:
+                        {address.phone_number}
+
+                      </p>
+
+
                     </div>
 
-                    <span className="address-type">
-                      {addr.address_type || "Home"}
-                    </span>
 
-                    <p>{addr.phone_number}</p>
 
-                    <p>{addr.address_line}</p>
-
-                    <p>
-                      {addr.city}, {addr.state}
-                    </p>
-
-                    <p>{addr.pincode}</p>
                   </div>
+
+
+                ))}
+
+
+              </div>
+
+
+
+
+
+              {/* ADD ADDRESS FORM */}
+
+
+
+              {showForm && (
+
+                <div className="address-form">
+
+
+                  {Object.keys(EMPTY_FORM)
+                  .filter(
+                    key =>
+                    key !== "is_default"
+                  )
+                  .map((field)=>(
+
+
+                    <input
+
+                      key={field}
+
+                      name={field}
+
+                      value={
+                        formData[field]
+                      }
+
+                      placeholder={
+                        field.replace("_"," ")
+                      }
+
+                      onChange={
+                        handleChange
+                      }
+
+                    />
+
+
+                  ))}
+
+
+
+                  <label>
+
+
+                    <input
+
+                      type="checkbox"
+
+                      name="is_default"
+
+                      checked={
+                        formData.is_default
+                      }
+
+                      onChange={
+                        handleChange
+                      }
+
+                    />
+
+
+                    Set as default
+
+
+                  </label>
+
+
+
+                  <button
+
+                    onClick={addAddress}
+
+                  >
+
+                    Save Address
+
+                  </button>
+
+
                 </div>
-              ))
-            )}
-          </div>
 
-          {/* ======================================
-                    ADDRESS FORM
-          ======================================= */}
+              )}
 
-          {showForm && (
-            <form className="address-form" onSubmit={saveAddress}>
-              <h3>Add New Address</h3>
 
-              <div className="form-grid">
-                <input
-                  name="full_name"
-                  placeholder="Full Name"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  required
-                />
 
-                <input
-                  name="phone_number"
-                  placeholder="Phone Number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <textarea
-                name="address_line"
-                placeholder="House No, Street, Area..."
-                value={formData.address_line}
-                onChange={handleChange}
-                required
-              />
-
-              <div className="form-grid">
-                <input
-                  name="city"
-                  placeholder="City"
-                  value={formData.city}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  name="state"
-                  placeholder="State"
-                  value={formData.state}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-grid">
-                <input
-                  name="pincode"
-                  placeholder="Pincode"
-                  value={formData.pincode}
-                  onChange={handleChange}
-                  required
-                />
-
-                <select
-                  name="address_type"
-                  value={formData.address_type}
-                  onChange={handleChange}
-                >
-                  <option value="Home">🏠 Home</option>
-
-                  <option value="Office">🏢 Office</option>
-
-                  <option value="Other">📍 Other</option>
-                </select>
-              </div>
-
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  name="is_default"
-                  checked={formData.is_default}
-                  onChange={handleChange}
-                />
-                Make this my default address
-              </label>
-
-              <div className="form-buttons">
-                <button
-                  type="button"
-                  className="cancel-btn"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </button>
-
-                <button type="submit" className="save-btn">
-                  Save Address
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* ===================================================
-                RIGHT SIDE STARTS HERE
-        ==================================================== */}
-
-        <div className="checkout-right">
-          {/* ===================================================
-        ORDER SUMMARY
-=================================================== */}
-
-          <div className="summary-card">
-            <div className="summary-title">
-              <h2>Order Summary</h2>
-
-              <span>{cart?.total_items} Items</span>
             </div>
 
-            {/* ===========================================
-          PRODUCTS
-  =========================================== */}
 
-            <div className="summary-products">
-              {cart?.cart_items?.map((item) => (
-                <div className="summary-product" key={item.cart_item_id}>
-                  <img
-                    src={item.product_image}
-                    alt={item.product_name}
-                    className="summary-image"
+
+
+
+            {/* PAYMENT METHOD */}
+
+
+
+            <div className="checkout-card">
+
+
+              <div className="checkout-title">
+
+
+                <FiCreditCard />
+
+
+                <h2>
+                  Payment Method
+                </h2>
+
+
+              </div>
+
+
+
+
+              <div className="payment-options">
+
+
+
+                <label
+                  className={
+                    paymentMethod==="COD"
+                    ? "payment-box active"
+                    : "payment-box"
+                  }
+                >
+
+
+                  <input
+
+                    type="radio"
+
+                    value="COD"
+
+                    checked={
+                      paymentMethod==="COD"
+                    }
+
+                    onChange={
+                      e =>
+                      setPaymentMethod(
+                        e.target.value
+                      )
+                    }
+
                   />
 
-                  <div className="summary-details">
-                    <h4>{item.product_name}</h4>
 
-                    {/* Variant */}
+                  <FaMoneyBillWave />
 
-                    <p className="summary-variant">
-                      {item.variant_capacity
-                        ? item.variant_capacity
-                        : "Standard"}
-                    </p>
 
-                    <p>
-                      Qty :<strong> {item.quantity}</strong>
-                    </p>
-                  </div>
+                  Cash On Delivery
 
-                  <div className="summary-price">
-                    ₹{item.subtotal_discount_price}
-                  </div>
-                </div>
-              ))}
+
+                </label>
+
+
+
+
+
+                <label
+
+                  className={
+                    paymentMethod==="RAZORPAY"
+                    ? "payment-box active"
+                    : "payment-box"
+                  }
+
+                >
+
+
+                  <input
+
+                    type="radio"
+
+                    value="RAZORPAY"
+
+                    checked={
+                      paymentMethod==="RAZORPAY"
+                    }
+
+                    onChange={
+                      e =>
+                      setPaymentMethod(
+                        e.target.value
+                      )
+                    }
+
+                  />
+
+
+
+                  <FiCreditCard />
+
+                  Online Payment
+
+
+
+                </label>
+
+
+
+              </div>
+
+
+
+
+
+              <div className="payment-icons">
+
+
+                <SiVisa />
+
+                <SiMastercard />
+
+                <SiGooglepay />
+
+                <SiPaytm />
+
+                <SiPhonepe />
+
+
+              </div>
+
+
+
             </div>
 
-            {/* ===========================================
-          PRICE DETAILS
-  =========================================== */}
 
-            <div className="price-details">
-              <h3>Price Details</h3>
 
-              <div className="summary-row">
-                <span>Subtotal</span>
-
-                <span>₹{cart.total_original_price}</span>
-              </div>
-
-              <div className="summary-row">
-                <span>Discount</span>
-
-                <span className="price-green">- ₹{cart.total_savings}</span>
-              </div>
-
-              <div className="summary-row">
-                <span>Delivery</span>
-
-                <span className="price-green">FREE</span>
-              </div>
-
-              <hr />
-
-              <div className="summary-total">
-                <span>Total</span>
-
-                <span>₹{cart.total_discount_price}</span>
-              </div>
-            </div>
-
-            {/* ===========================================
-          PAYMENT
-  =========================================== */}
-
-            <div className="payment-section">
-              <h3>
-                <FiLock />
-                Secure Payment
-              </h3>
-
-              {/* COD */}
-
-              <div
-                className={`payment-card ${
-                  paymentMethod === "COD" ? "active" : ""
-                }`}
-                onClick={() => setPaymentMethod("COD")}
-              >
-                <input
-                  type="radio"
-                  checked={paymentMethod === "COD"}
-                  readOnly
-                />
-
-                <FaMoneyBillWave className="payment-icon" />
-
-                <div>
-                  <h4>Cash on Delivery</h4>
-
-                  <p>Pay after your order arrives.</p>
-                </div>
-              </div>
-
-              {/* UPI */}
-
-              <div
-                className={`payment-card ${
-                  paymentMethod === "RAZORPAY" ? "active" : ""
-                }`}
-                onClick={() => setPaymentMethod("RAZORPAY")}
-              >
-                <input
-                  type="radio"
-                  checked={paymentMethod === "RAZORPAY"}
-                  readOnly
-                />
-
-                <FiCreditCard className="payment-icon" />
-
-                <div>
-                  <h4>UPI Payment</h4>
-
-                  <p>Google Pay • PhonePe • Paytm</p>
-                </div>
-              </div>
-
-              {/* CARD */}
-
-              <div
-                className={`payment-card ${
-                  paymentMethod === "RAZORPAY" ? "active" : ""
-                }`}
-                onClick={() => setPaymentMethod("RAZORPAY")}
-              >
-                <input
-                  type="radio"
-                  checked={paymentMethod === "CARD"}
-                  readOnly
-                />
-
-                <FiCreditCard className="payment-icon" />
-
-                <div>
-                  <h4>Credit / Debit Card</h4>
-
-                  <p>Visa • Mastercard • RuPay</p>
-                </div>
-              </div>
-
-              {/* NET BANKING */}
-
-              <div
-                className={`payment-card ${
-                  paymentMethod === "RAZORPAY" ? "active" : ""
-                }`}
-                onClick={() => setPaymentMethod("RAZORPAY")}
-              >
-                <input
-                  type="radio"
-                  checked={paymentMethod === "RAZORPAY"}
-                  readOnly
-                />
-
-                <FiTruck className="payment-icon" />
-
-                <div>
-                  <h4>Net Banking</h4>
-
-                  <p>All major Indian banks</p>
-                </div>
-              </div>
-            </div>
-
-            {/* ===========================================
-          PAYMENT LOGOS
-  =========================================== */}
-
-            <div className="payment-logos">
-              <h4>Accepted Payments</h4>
-
-              <div className="logo-grid">
-                <div className="logo-box">
-                  <SiVisa />
-
-                  <span>Visa</span>
-                </div>
-
-                <div className="logo-box">
-                  <SiMastercard />
-
-                  <span>Master</span>
-                </div>
-
-                <div className="logo-box">
-                  <img src="/images/rupay.png" alt="RuPay" />
-                </div>
-
-                <div className="logo-box">
-                  <img src="/images/upi.png" alt="UPI" />
-                </div>
-
-                <div className="logo-box">
-                  <SiGooglepay />
-                </div>
-
-                <div className="logo-box">
-                  <SiPhonepe />
-                </div>
-
-                <div className="logo-box">
-                  <SiPaytm />
-                </div>
-              </div>
-            </div>
-
-            {/* ===========================================
-          SECURITY
-  =========================================== */}
-
-            <div className="secure-checkout">
-              <FiLock />
-
-              <span>100% Secure SSL Encrypted Checkout</span>
-            </div>
-
-            {/* ===========================================
-          BUTTON
-  =========================================== */}
-
-            <button
-              className="place-order-btn"
-              disabled={placingOrder}
-              onClick={placeOrder}
-            >
-              {placingOrder ? "Preparing Order..." : "Place Order"}
-            </button>
           </div>
+
+                    {/* =========================
+              RIGHT SECTION
+          ========================== */}
+
+
+          <div className="checkout-right">
+
+
+            <div className="checkout-card summary-card">
+
+
+              <div className="checkout-title">
+
+
+                <FiCheckCircle />
+
+
+                <h2>
+                  Order Summary
+                </h2>
+
+
+              </div>
+
+
+
+
+
+              {/* PRODUCTS */}
+
+
+
+              <div className="checkout-products">
+
+
+                {cart.cart_items.map((item)=>(
+
+
+                  <div
+                    className="checkout-product"
+                    key={
+                      item.cart_item_id
+                    }
+                  >
+
+
+
+                    <img
+
+                      src={
+                        item.product_image
+                      }
+
+                      alt={
+                        item.product_name
+                      }
+
+                    />
+
+
+
+                    <div className="product-info">
+
+
+                      <h4>
+
+                        {item.product_name}
+
+                      </h4>
+
+
+
+                      {
+                        item.variant_capacity &&
+
+                        <p>
+
+                          Size:
+                          {
+                            item.variant_capacity
+                          }
+
+                        </p>
+
+                      }
+
+
+
+                      <p>
+
+                        Qty:
+                        {
+                          item.quantity
+                        }
+
+                      </p>
+
+
+
+                    </div>
+
+
+
+
+                    <strong>
+
+
+                      ₹
+                      {
+                        item.subtotal_discount_price
+                      }
+
+
+                    </strong>
+
+
+
+                  </div>
+
+
+
+                ))}
+
+
+
+              </div>
+
+
+
+
+
+              {/* PRICE DETAILS */}
+
+
+
+              <div className="price-details">
+
+
+
+                <div>
+
+                  <span>
+                    Total Items
+                  </span>
+
+
+                  <span>
+
+                    {
+                      cart.total_items
+                    }
+
+                  </span>
+
+
+                </div>
+
+
+
+
+
+                <div>
+
+                  <span>
+                    Price
+                  </span>
+
+
+                  <span>
+
+                    ₹
+                    {
+                      cart.total_original_price
+                    }
+
+                  </span>
+
+
+                </div>
+
+
+
+
+
+                <div>
+
+                  <span>
+                    Discount
+                  </span>
+
+
+                  <span className="discount">
+
+
+                    -₹
+                    {
+                      cart.total_savings
+                    }
+
+
+                  </span>
+
+
+                </div>
+
+
+
+
+
+                <div className="final-price">
+
+
+                  <span>
+
+                    Total Amount
+
+                  </span>
+
+
+                  <span>
+
+                    ₹
+                    {
+                      finalAmount
+                    }
+
+                  </span>
+
+
+                </div>
+
+
+
+              </div>
+
+
+
+
+
+              {/* PLACE ORDER BUTTON */}
+
+
+
+              <button
+
+                className="place-order-btn"
+
+
+                disabled={
+                  placingOrder ||
+                  processingPayment
+                }
+
+
+                onClick={
+                  placeOrder
+                }
+
+              >
+
+
+                {
+                  placingOrder
+
+                  ? "Processing..."
+
+                  : paymentMethod==="COD"
+
+                  ? "Place Order"
+
+                  : "Pay Now"
+
+                }
+
+
+              </button>
+
+
+
+
+
+              <div className="secure-payment">
+
+
+                <FiLock />
+
+
+                Secure checkout powered by ClayWare
+
+
+
+              </div>
+
+
+
+            </div>
+
+
+
+          </div>
+
+
+
         </div>
+
+
+
       </div>
 
+
+
+
+
+      {/* =========================
+          PAYMENT OVERLAY
+      ========================== */}
+
+
+
+      {showOverlay && (
+
+
+        <div className="payment-overlay">
+
+
+
+          <div className="clay-loader">
+
+
+
+            <div className="clay-circle">
+
+
+            </div>
+
+
+
+
+            <h3>
+
+              {loadingText}
+
+            </h3>
+
+
+
+            <p>
+
+              Please don't refresh or close this page
+
+            </p>
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+      )}
+
+
+
+
+
       <Footer />
+
+
     </>
+
   );
+
 }
+
 
 export default Checkout;

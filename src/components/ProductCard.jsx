@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -30,6 +30,8 @@ function ProductCard() {
         try {
 
       const response = await api.get("/accounts/home-page/");
+      console.log("Response Data:", response.data);
+console.log("Products:", response.data.products);
 
             const data = response.data.products || [];
 
@@ -117,6 +119,7 @@ function ProductCard() {
         <section className="premium-products">
 
             <div className="premium-grid">
+                
 
                 {products.map((product) => {
 

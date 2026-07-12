@@ -1,16 +1,12 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.PROD
-    ? import.meta.env.VITE_PRODUCTION_API
-    : import.meta.env.VITE_LOCAL_API,
-
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Automatically add token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 

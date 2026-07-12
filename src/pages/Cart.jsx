@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 import "./styles/Cart.css";
+import api from "../api/axios";
 
 function Cart() {
   const navigate = useNavigate();
@@ -20,14 +21,10 @@ function Cart() {
   // =========================
   const fetchCart = async () => {
     try {
-      const response = await axios.get(
-        "https://claywarebackend.onrender.com/api/user/viewcart/",
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
-      );
+    const response = await api.get("/user/viewcart/");
+         console.log("Cart API:", response.data);
+        
+  
 
       setCart(response.data);
     } catch (error) {
@@ -46,15 +43,7 @@ function Cart() {
   // =========================
   const increaseQuantity = async (productId) => {
     try {
-      await axios.post(
-        `https://claywarebackend.onrender.com/api/user/addtocart/${productId}/`,
-        {},
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
-      );
+      await api.post(`/user/addtocart/${productId}/`);
 
       fetchCart();
 
@@ -69,14 +58,8 @@ function Cart() {
   // =========================
   const decreaseQuantity = async (cartItemId) => {
     try {
-      await axios.delete(
-        `https://claywarebackend.onrender.com/api/user/remove-cart-item/${cartItemId}/`,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        },
-      );
+      await api.post(`api/user/remove-cart-item/${cartItemId}/`)
+      
 
       fetchCart();
 
