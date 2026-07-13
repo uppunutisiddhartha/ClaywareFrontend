@@ -8,8 +8,21 @@ import {
   FiPlus,
   FiCreditCard,
   FiTruck,
-  FiCheckCircle,
   FiLock,
+  FiUser,
+  FiPhone,
+  FiEdit2,
+  FiTrash2,
+  FiCheck,
+  FiGift,
+  FiTag,
+  FiPackage,
+  FiShield,
+  FiClock,
+  FiSearch,
+  FiX,
+  FiChevronDown,
+  FiArrowLeft,
 } from "react-icons/fi";
 
 import {
@@ -20,7 +33,8 @@ import {
   SiPhonepe,
 } from "react-icons/si";
 
-import { FaMoneyBillWave } from "react-icons/fa";
+import { FaMoneyBillWave, FaQrcode } from "react-icons/fa";
+import { IoMdClose } from "react-icons/io";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -54,27 +68,33 @@ function Checkout() {
 
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
-
   const [paymentMethod, setPaymentMethod] = useState("COD");
-
   const [loading, setLoading] = useState(true);
-
   const [placingOrder, setPlacingOrder] = useState(false);
-
   const [processingPayment, setProcessingPayment] = useState(false);
-
   const [showOverlay, setShowOverlay] = useState(false);
-
-  const [loadingText, setLoadingText] = useState(
-    "Preparing your ClayWare order..."
-  );
-
+  const [loadingText, setLoadingText] = useState("Preparing your order...");
   const [showForm, setShowForm] = useState(false);
-
-  // Missing in your code
-  const [showAddressList, setShowAddressList] = useState(false);
-
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [showAddressDrawer, setShowAddressDrawer] = useState(false);
+  const [searchAddress, setSearchAddress] = useState("");
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // =====================================
+  // CHECK DEVICE
+  // =====================================
+
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
 
   // =====================================
   // FETCH CART
@@ -96,14 +116,9 @@ function Checkout() {
   const fetchAddresses = async () => {
     try {
       const res = await api.get("/user/user-addresses/");
-
       const list = res.data.addresses || [];
-
       setAddresses(list);
-
-      const defaultAddress =
-        list.find((item) => item.is_default) || list[0];
-
+      const defaultAddress = list.find((item) => item.is_default) || list[0];
       if (defaultAddress) {
         setSelectedAddress(defaultAddress.address_id);
       }
@@ -127,1185 +142,791 @@ function Checkout() {
                 product_name: buyNowData.product_name,
                 product_image: buyNowData.product_image,
                 quantity: buyNowData.quantity,
-                variant_capacity:
-                  buyNowData.variant_capacity || "Standard",
-                subtotal_discount_price:
-                  buyNowData.price * buyNowData.quantity,
+                variant_capacity: buyNowData.variant_capacity || "Standard",
+                subtotal_discount_price: buyNowData.price * buyNowData.quantity,
               },
             ],
-
             total_items: buyNowData.quantity,
-
-            total_original_price:
-              buyNowData.price * buyNowData.quantity,
-
-            total_discount_price:
-              buyNowData.price * buyNowData.quantity,
-
+            total_original_price: buyNowData.price * buyNowData.quantity,
+            total_discount_price: buyNowData.price * buyNowData.quantity,
             total_savings: 0,
           });
-
           await fetchAddresses();
         } else {
-          await Promise.all([
-            fetchCart(),
-            fetchAddresses(),
-          ]);
+          await Promise.all([fetchCart(), fetchAddresses()]);
         }
       } finally {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
-    // =====================================
+
+  // =====================================
   // HANDLE FORM INPUT
   // =====================================
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-
   // =====================================
-  // ADD NEW ADDRESS
+  // ADD/EDIT ADDRESS
   // =====================================
 
-  const addAddress = async () => {
+  const saveAddress = async () => {
     try {
-      const res = await api.post(
-        "/user/add-address/",
-        formData
-      );
-
-      alert("Address added successfully");
-
+      const url = editingAddress 
+        ? `/user/update-address/${editingAddress}/`
+        : "/user/add-address/";
+      const method = editingAddress ? "put" : "post";
+      
+      const res = await api[method](url, formData);
+      alert(editingAddress ? "Address updated successfully" : "Address added successfully");
+      
       setShowForm(false);
-
+      setEditingAddress(null);
       setFormData(EMPTY_FORM);
-
       await fetchAddresses();
-
-      setSelectedAddress(
-        res.data.address_id
-      );
-
+      
+      if (res.data.address_id) {
+        setSelectedAddress(res.data.address_id);
+      }
     } catch (err) {
-      console.error(
-        "Add Address Error:",
-        err
-      );
+      console.error("Save Address Error:", err);
+      alert("Unable to save address");
     }
   };
 
+  // =====================================
+  // DELETE ADDRESS
+  // =====================================
+
+  const deleteAddress = async (addressId) => {
+    try {
+      await api.delete(`/user/delete-address/${addressId}/`);
+      await fetchAddresses();
+      setShowDeleteConfirm(null);
+      if (selectedAddress === addressId) {
+        setSelectedAddress(null);
+      }
+    } catch (err) {
+      console.error("Delete Address Error:", err);
+      alert("Unable to delete address");
+    }
+  };
+
+  // =====================================
+  // EDIT ADDRESS
+  // =====================================
+
+  const editAddress = (address) => {
+    setFormData({
+      full_name: address.full_name,
+      phone_number: address.phone_number,
+      address_line: address.address_line,
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+      address_type: address.address_type || "Home",
+      is_default: address.is_default || false,
+    });
+    setEditingAddress(address.address_id);
+    setShowForm(true);
+    setShowAddressDrawer(false);
+  };
+
+  // =====================================
+  // OPEN ADD ADDRESS FORM INSIDE DRAWER
+  // =====================================
+
+  const openAddAddressForm = () => {
+    setEditingAddress(null);
+    setFormData(EMPTY_FORM);
+    setShowForm(true);
+  };
+
+  // =====================================
+  // CLOSE ADDRESS FORM
+  // =====================================
+
+  const closeAddressForm = () => {
+    setShowForm(false);
+    setEditingAddress(null);
+    setFormData(EMPTY_FORM);
+  };
 
   // =====================================
   // CREATE ORDER
   // =====================================
 
   const placeOrder = async () => {
-
     if (!selectedAddress) {
       alert("Please select delivery address");
       return;
     }
 
-
     setPlacingOrder(true);
     setShowOverlay(true);
 
-
     try {
-
-      setLoadingText(
-        "Creating your ClayWare order..."
-      );
-
-
+      setLoadingText("Creating your order...");
       const payload = {
-
         address_id: selectedAddress,
-
         payment_method: paymentMethod,
-
-
         buy_now: buyNowData?.buyNow || false,
-
-
         buy_now_product: buyNowData?.buyNow
           ? {
               product_id: buyNowData.product_id,
               quantity: buyNowData.quantity,
-              variant_id:
-                buyNowData.variant_id,
+              variant_id: buyNowData.variant_id,
             }
           : null,
-
       };
 
-
-      const res = await api.post(
-        "/order/checkout/",
-        payload
-      );
-
-
+      const res = await api.post("/order/checkout/", payload);
       const order = res.data;
 
-
       if (paymentMethod === "COD") {
-
-        setLoadingText(
-          "Order placed successfully..."
-        );
-
-
+        setLoadingText("Order placed successfully!");
         setTimeout(() => {
-
-          navigate(
-            `/order-success/${order.order_id}`
-          );
-
+          navigate(`/order-success/${order.order_id}`);
         }, 1500);
-
-
       } else {
-
-        await handleRazorpayPayment(
-          order.order_id
-        );
-
+        await handleRazorpayPayment(order.order_id);
       }
-
-
     } catch (err) {
-
-      console.error(
-        "Order Error:",
-        err
-      );
-
-      alert(
-        "Unable to place order"
-      );
-
+      console.error("Order Error:", err);
+      alert("Unable to place order");
       setShowOverlay(false);
-
     } finally {
-
       setPlacingOrder(false);
-
     }
-
   };
-    // =====================================
+
+  // =====================================
   // RAZORPAY PAYMENT
   // =====================================
 
   const handleRazorpayPayment = async (orderId) => {
-
     try {
-
       setProcessingPayment(true);
-
-      setLoadingText(
-        "Opening secure payment..."
-      );
-
-
-      // Create Razorpay order
-
-      const razorpayRes = await api.post(
-        "/payments/create-razorpay-order/",
-        {
-          order_id: orderId,
-        }
-      );
-
-
+      setLoadingText("Opening secure payment...");
+      const razorpayRes = await api.post("/payments/create-order/", {
+        order_id: orderId,
+      });
       const data = razorpayRes.data;
-
-
       const loaded = await loadRazorpay();
-
-
       if (!loaded) {
-
-        alert(
-          "Razorpay failed to load"
-        );
-
+        alert("Razorpay failed to load");
         return;
-
       }
 
-
-
+      const selectedAddr = addresses.find(a => a.address_id === selectedAddress);
+      
       const options = {
-
         key: data.key,
-
         amount: data.amount,
-
         currency: "INR",
-
         name: "ClayWare",
-
-        description:
-          "ClayWare Order Payment",
-
-
-        order_id:
-          data.razorpay_order_id,
-
-
-        handler: async function (
-          response
-        ) {
-
-
+        description: "ClayWare Order Payment",
+        order_id: data.razorpay_order_id,
+        handler: async function (response) {
           try {
-
-            setLoadingText(
-              "Verifying payment..."
-            );
-
-
-            const verifyRes =
-              await api.post(
-                "/payments/verify-payment/",
-                {
-
-                  razorpay_order_id:
-                    response.razorpay_order_id,
-
-
-                  razorpay_payment_id:
-                    response.razorpay_payment_id,
-
-
-                  razorpay_signature:
-                    response.razorpay_signature,
-
-
-                  order_id: orderId,
-
-                }
-              );
-
-
-            if (
-              verifyRes.data.success
-            ) {
-
-
-              setLoadingText(
-                "Payment successful..."
-              );
-
-
+            setLoadingText("Verifying payment...");
+            const verifyRes = await api.post("/payments/verify/", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              order_id: orderId,
+            });
+            if (verifyRes.data.success) {
+              setLoadingText("Payment successful!");
               setTimeout(() => {
-
-                navigate(
-                  `/order-success/${orderId}`
-                );
-
-              },1500);
-
-
+                navigate(`/order-success/${orderId}`);
+              }, 1500);
             }
-
-
-          } catch(error){
-
-            console.error(
-              "Payment Verification Error:",
-              error
-            );
-
-            alert(
-              "Payment verification failed"
-            );
-
+          } catch (error) {
+            console.error("Payment Verification Error:", error);
+            alert("Payment verification failed");
           }
-
         },
-
-
         prefill: {
-
-          name:
-            selectedAddress?.full_name || "",
-
-          contact:
-            selectedAddress?.phone_number || "",
-
+          name: selectedAddr?.full_name || "",
+          contact: selectedAddr?.phone_number || "",
         },
-
-
         theme: {
-
-          color:"#b86b3c"
-
-        }
-
+          color: "#b86b3c",
+        },
       };
 
-
-
-      const razorpay =
-        new window.Razorpay(options);
-
-
+      const razorpay = new window.Razorpay(options);
       razorpay.open();
-
-
-
-      razorpay.on(
-        "payment.failed",
-        function(response){
-
-          console.log(
-            response.error
-          );
-
-          alert(
-            "Payment failed"
-          );
-
-        }
-      );
-
-
-    } catch(error){
-
-      console.error(
-        "Razorpay Error:",
-        error
-      );
-
-      alert(
-        "Unable to start payment"
-      );
-
-
+      razorpay.on("payment.failed", function (response) {
+        console.log(response.error);
+        alert("Payment failed");
+        setShowOverlay(false);
+      });
+    } catch (error) {
+      console.error("Razorpay Error:", error);
+      alert("Unable to start payment");
+      setShowOverlay(false);
     } finally {
-
       setProcessingPayment(false);
-
     }
-
   };
-
-
 
   // =====================================
   // TOTAL PRICE
   // =====================================
 
+  const finalAmount = cart.total_discount_price;
 
-  const finalAmount =
-    cart.total_discount_price;
+  // =====================================
+  // FILTERED ADDRESSES
+  // =====================================
 
-
+  const filteredAddresses = addresses.filter(addr =>
+    addr.full_name.toLowerCase().includes(searchAddress.toLowerCase()) ||
+    addr.address_line.toLowerCase().includes(searchAddress.toLowerCase()) ||
+    addr.city.toLowerCase().includes(searchAddress.toLowerCase())
+  );
 
   // =====================================
   // LOADING SCREEN
   // =====================================
 
-  if(loading){
-
+  if (loading) {
     return (
-
       <>
-
         <Navbar />
-
-
         <div className="checkout-loader">
-
-          <FiLock />
-
-          <h3>
-            Loading Checkout...
-          </h3>
-
+          <div className="loader-skeleton">
+            <div className="skeleton-shimmer"></div>
+          </div>
+          <h3>Loading Checkout...</h3>
         </div>
-
-
         <Footer />
-
       </>
-
     );
-
   }
-    return (
 
+  return (
     <>
-
       <Navbar />
-
-
       <div className="checkout-page">
-
-
         <div className="checkout-container">
-
-
           {/* =========================
               LEFT SECTION
           ========================== */}
-
-
           <div className="checkout-left">
-
-
-
-            {/* DELIVERY ADDRESS */}
-
+            {/* SHIPPING ADDRESS */}
             <div className="checkout-card">
-
-
-              <div className="checkout-title">
-
-                <FiTruck />
-
-                <h2>
-                  Delivery Address
-                </h2>
-
-
+              <div className="card-header">
+                <h2 className="section-title">Shipping Address</h2>
               </div>
 
-
-
-              <button
-                className="add-address-btn"
-                onClick={() =>
-                  setShowForm(!showForm)
-                }
-              >
-
-                <FiPlus />
-
-                Add New Address
-
-              </button>
-
-
-
-
-              {/* ADDRESS LIST */}
-
-
-              <div className="address-list">
-
-
-                {addresses.map((address)=>(
-
-
-                  <div
-                    key={address.address_id}
-
-                    className={
-                      selectedAddress ===
-                      address.address_id
-
-                      ? "address-box active"
-
-                      : "address-box"
-                    }
-
-
-                    onClick={() =>
-                      setSelectedAddress(
-                        address.address_id
-                      )
-                    }
-
-                  >
-
-
-                    <input
-
-                      type="radio"
-
-                      checked={
-                        selectedAddress ===
-                        address.address_id
-                      }
-
-                      readOnly
-
-                    />
-
-
-
-                    <div>
-
-
-                      <h4>
-
-                        {address.full_name}
-
-                      </h4>
-
-
-                      <p>
-
-                        {address.address_line}
-
+              {/* Selected Address */}
+              {selectedAddress && (
+                <div className="selected-address">
+                  {addresses.filter(a => a.address_id === selectedAddress).map(address => (
+                    <div key={address.address_id} className="address-block">
+                      <div className="address-row">
+                        <span className="address-name">{address.full_name}</span>
+                        <span className="address-phone">{address.phone_number}</span>
+                      </div>
+                      <p className="address-line">
+                        {address.address_line}, {address.city}, {address.state} - {address.pincode}
                       </p>
-
-
-                      <p>
-
-                        {address.city},
-                        {address.state}
-                        -
-                        {address.pincode}
-
-                      </p>
-
-
-                      <p>
-
-                        Phone:
-                        {address.phone_number}
-
-                      </p>
-
-
+                      <div className="address-tags">
+                        {address.is_default && <span className="tag-default">Default</span>}
+                        <span className={`tag-type ${address.address_type.toLowerCase()}`}>
+                          {address.address_type}
+                        </span>
+                      </div>
+                      <button 
+                        className="change-address-link"
+                        onClick={() => setShowAddressDrawer(true)}
+                      >
+                        Change Address
+                      </button>
                     </div>
-
-
-
-                  </div>
-
-
-                ))}
-
-
-              </div>
-
-
-
-
-
-              {/* ADD ADDRESS FORM */}
-
-
-
-              {showForm && (
-
-                <div className="address-form">
-
-
-                  {Object.keys(EMPTY_FORM)
-                  .filter(
-                    key =>
-                    key !== "is_default"
-                  )
-                  .map((field)=>(
-
-
-                    <input
-
-                      key={field}
-
-                      name={field}
-
-                      value={
-                        formData[field]
-                      }
-
-                      placeholder={
-                        field.replace("_"," ")
-                      }
-
-                      onChange={
-                        handleChange
-                      }
-
-                    />
-
-
                   ))}
-
-
-
-                  <label>
-
-
-                    <input
-
-                      type="checkbox"
-
-                      name="is_default"
-
-                      checked={
-                        formData.is_default
-                      }
-
-                      onChange={
-                        handleChange
-                      }
-
-                    />
-
-
-                    Set as default
-
-
-                  </label>
-
-
-
-                  <button
-
-                    onClick={addAddress}
-
-                  >
-
-                    Save Address
-
-                  </button>
-
-
                 </div>
-
               )}
 
-
-
-            </div>
-
-
-
-
-
-            {/* PAYMENT METHOD */}
-
-
-
-            <div className="checkout-card">
-
-
-              <div className="checkout-title">
-
-
-                <FiCreditCard />
-
-
-                <h2>
-                  Payment Method
-                </h2>
-
-
-              </div>
-
-
-
-
-              <div className="payment-options">
-
-
-
-                <label
-                  className={
-                    paymentMethod==="COD"
-                    ? "payment-box active"
-                    : "payment-box"
+              {/* Address Drawer with Form Inside */}
+              {showAddressDrawer && (
+                <div className="drawer-overlay" onClick={() => {
+                  if (!showForm) {
+                    setShowAddressDrawer(false);
                   }
-                >
-
-
-                  <input
-
-                    type="radio"
-
-                    value="COD"
-
-                    checked={
-                      paymentMethod==="COD"
-                    }
-
-                    onChange={
-                      e =>
-                      setPaymentMethod(
-                        e.target.value
-                      )
-                    }
-
-                  />
-
-
-                  <FaMoneyBillWave />
-
-
-                  Cash On Delivery
-
-
-                </label>
-
-
-
-
-
-                <label
-
-                  className={
-                    paymentMethod==="RAZORPAY"
-                    ? "payment-box active"
-                    : "payment-box"
-                  }
-
-                >
-
-
-                  <input
-
-                    type="radio"
-
-                    value="RAZORPAY"
-
-                    checked={
-                      paymentMethod==="RAZORPAY"
-                    }
-
-                    onChange={
-                      e =>
-                      setPaymentMethod(
-                        e.target.value
-                      )
-                    }
-
-                  />
-
-
-
-                  <FiCreditCard />
-
-                  Online Payment
-
-
-
-                </label>
-
-
-
-              </div>
-
-
-
-
-
-              <div className="payment-icons">
-
-
-                <SiVisa />
-
-                <SiMastercard />
-
-                <SiGooglepay />
-
-                <SiPaytm />
-
-                <SiPhonepe />
-
-
-              </div>
-
-
-
-            </div>
-
-
-
-          </div>
-
-                    {/* =========================
-              RIGHT SECTION
-          ========================== */}
-
-
-          <div className="checkout-right">
-
-
-            <div className="checkout-card summary-card">
-
-
-              <div className="checkout-title">
-
-
-                <FiCheckCircle />
-
-
-                <h2>
-                  Order Summary
-                </h2>
-
-
-              </div>
-
-
-
-
-
-              {/* PRODUCTS */}
-
-
-
-              <div className="checkout-products">
-
-
-                {cart.cart_items.map((item)=>(
-
-
-                  <div
-                    className="checkout-product"
-                    key={
-                      item.cart_item_id
-                    }
-                  >
-
-
-
-                    <img
-
-                      src={
-                        item.product_image
-                      }
-
-                      alt={
-                        item.product_name
-                      }
-
-                    />
-
-
-
-                    <div className="product-info">
-
-
-                      <h4>
-
-                        {item.product_name}
-
-                      </h4>
-
-
-
-                      {
-                        item.variant_capacity &&
-
-                        <p>
-
-                          Size:
-                          {
-                            item.variant_capacity
-                          }
-
-                        </p>
-
-                      }
-
-
-
-                      <p>
-
-                        Qty:
-                        {
-                          item.quantity
-                        }
-
-                      </p>
-
-
-
+                }}>
+                  <div className={`drawer ${isMobile ? 'bottom' : 'side'}`} onClick={(e) => e.stopPropagation()}>
+                    
+                    {/* Drawer Header - Shows different content based on form state */}
+                    <div className="drawer-head">
+                      {showForm ? (
+                        <>
+                          <button className="drawer-back" onClick={closeAddressForm}>
+                            <FiArrowLeft />
+                          </button>
+                          <h3>{editingAddress ? "Edit Address" : "Add New Address"}</h3>
+                          <button className="drawer-close" onClick={() => {
+                            closeAddressForm();
+                            setShowAddressDrawer(false);
+                          }}>
+                            <FiX />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <h3>Select Address</h3>
+                          <button className="drawer-close" onClick={() => setShowAddressDrawer(false)}>
+                            <FiX />
+                          </button>
+                        </>
+                      )}
                     </div>
 
+                    {showForm ? (
+                      /* ==========================================
+                         ADDRESS FORM INSIDE DRAWER
+                         ========================================== */
+                      <div className="drawer-address-form">
+                        <div className="form-grid">
+                          <div className="form-field full">
+                            <input
+                              name="full_name"
+                              value={formData.full_name}
+                              placeholder=" "
+                              onChange={handleChange}
+                              className="floating-input"
+                            />
+                            <label className="floating-label">Full Name</label>
+                            <FiUser className="field-icon" />
+                          </div>
+                          
+                          <div className="form-field full">
+                            <input
+                              name="phone_number"
+                              value={formData.phone_number}
+                              placeholder=" "
+                              onChange={handleChange}
+                              className="floating-input"
+                            />
+                            <label className="floating-label">Phone Number</label>
+                            <FiPhone className="field-icon" />
+                          </div>
+                          
+                          <div className="form-field full">
+                            <input
+                              name="address_line"
+                              value={formData.address_line}
+                              placeholder=" "
+                              onChange={handleChange}
+                              className="floating-input"
+                            />
+                            <label className="floating-label">Address Line</label>
+                          </div>
+                          
+                          <div className="form-field">
+                            <input
+                              name="city"
+                              value={formData.city}
+                              placeholder=" "
+                              onChange={handleChange}
+                              className="floating-input"
+                            />
+                            <label className="floating-label">City</label>
+                          </div>
+                          
+                          <div className="form-field">
+                            <input
+                              name="state"
+                              value={formData.state}
+                              placeholder=" "
+                              onChange={handleChange}
+                              className="floating-input"
+                            />
+                            <label className="floating-label">State</label>
+                          </div>
+                          
+                          <div className="form-field">
+                            <input
+                              name="pincode"
+                              value={formData.pincode}
+                              placeholder=" "
+                              onChange={handleChange}
+                              className="floating-input"
+                            />
+                            <label className="floating-label">Pincode</label>
+                          </div>
+                          
+                          <div className="form-field">
+                            <select
+                              name="address_type"
+                              value={formData.address_type}
+                              onChange={handleChange}
+                              className="floating-select"
+                            >
+                              <option value="Home">Home</option>
+                              <option value="Work">Work</option>
+                              <option value="Other">Other</option>
+                            </select>
+                            <label className="floating-label">Address Type</label>
+                          </div>
+                        </div>
+                        
+                        <div className="form-footer">
+                          <label className="checkbox">
+                            <input
+                              type="checkbox"
+                              name="is_default"
+                              checked={formData.is_default}
+                              onChange={handleChange}
+                            />
+                            <span className="checkmark"></span>
+                            Set as default
+                          </label>
+                          <div className="form-actions">
+                            <button className="btn-cancel" onClick={closeAddressForm}>
+                              Cancel
+                            </button>
+                            <button className="btn-save" onClick={saveAddress}>
+                              {editingAddress ? "Update" : "Save"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ==========================================
+                         ADDRESS LIST INSIDE DRAWER
+                         ========================================== */
+                      <>
+                        <div className="drawer-search">
+                          <FiSearch />
+                          <input
+                            type="text"
+                            placeholder="Search addresses..."
+                            value={searchAddress}
+                            onChange={(e) => setSearchAddress(e.target.value)}
+                          />
+                        </div>
 
+                        <div className="drawer-list">
+                          {filteredAddresses.map((address) => (
+                            <div
+                              key={address.address_id}
+                              className={`drawer-item ${selectedAddress === address.address_id ? "selected" : ""}`}
+                              onClick={() => {
+                                setSelectedAddress(address.address_id);
+                                setShowAddressDrawer(false);
+                              }}
+                            >
+                              <div className="drawer-radio">
+                                {selectedAddress === address.address_id ? (
+                                  <div className="radio-checked"><FiCheck /></div>
+                                ) : (
+                                  <div className="radio-empty" />
+                                )}
+                              </div>
+                              <div className="drawer-info">
+                                <div className="drawer-name">
+                                  {address.full_name}
+                                  <span className="drawer-phone">{address.phone_number}</span>
+                                </div>
+                                <p className="drawer-address">
+                                  {address.address_line}, {address.city}, {address.state} - {address.pincode}
+                                </p>
+                                <div className="drawer-tags">
+                                  {address.is_default && <span className="tag-default">Default</span>}
+                                  <span className={`tag-type ${address.address_type.toLowerCase()}`}>
+                                    {address.address_type}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="drawer-actions">
+                                <button className="drawer-edit" onClick={(e) => { e.stopPropagation(); editAddress(address); }}>
+                                  <FiEdit2 />
+                                </button>
+                                <button className="drawer-delete" onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(address.address_id); }}>
+                                  <FiTrash2 />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
 
+                        {/* Add New Address Button inside Drawer */}
+                        <button
+                          className="drawer-add"
+                          onClick={openAddAddressForm}
+                        >
+                          <FiPlus /> Add New Address
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
-                    <strong>
+              {/* Delete Confirmation */}
+              {showDeleteConfirm && (
+                <div className="modal-overlay">
+                  <div className="modal-box">
+                    <div className="modal-icon"><FiTrash2 /></div>
+                    <h3>Delete Address?</h3>
+                    <p>This action cannot be undone.</p>
+                    <div className="modal-actions">
+                      <button className="btn-cancel" onClick={() => setShowDeleteConfirm(null)}>Cancel</button>
+                      <button className="btn-delete" onClick={() => deleteAddress(showDeleteConfirm)}>Delete</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
+            {/* PAYMENT METHOD */}
+            <div className="checkout-card">
+              <div className="card-header">
+                <h2 className="section-title">Payment Method</h2>
+              </div>
 
-                      ₹
-                      {
-                        item.subtotal_discount_price
-                      }
+              <div className="payment-list">
+                <label className={`payment-item ${paymentMethod === "COD" ? "active" : ""}`}>
+                  <input
+                    type="radio"
+                    value="COD"
+                    checked={paymentMethod === "COD"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <div className="payment-content">
+                    <FaMoneyBillWave className="payment-icon" />
+                    <div>
+                      <h4>Cash on Delivery</h4>
+                      <p>Pay when you receive</p>
+                    </div>
+                    {paymentMethod === "COD" && <FiCheck className="payment-check" />}
+                  </div>
+                </label>
 
+                <label className={`payment-item ${paymentMethod === "RAZORPAY" ? "active" : ""}`}>
+                  <input
+                    type="radio"
+                    value="RAZORPAY"
+                    checked={paymentMethod === "RAZORPAY"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <div className="payment-content">
+                    <FiCreditCard className="payment-icon" />
+                    <div>
+                      <h4>Online Payment</h4>
+                      <p>Card, UPI, Netbanking</p>
+                    </div>
+                    {paymentMethod === "RAZORPAY" && <FiCheck className="payment-check" />}
+                  </div>
+                </label>
 
-                    </strong>
+                <label className={`payment-item ${paymentMethod === "UPI" ? "active" : ""}`}>
+                  <input
+                    type="radio"
+                    value="UPI"
+                    checked={paymentMethod === "UPI"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <div className="payment-content">
+                    <FaQrcode className="payment-icon" />
+                    <div>
+                      <h4>UPI</h4>
+                      <p>Google Pay, PhonePe, Paytm</p>
+                    </div>
+                    {paymentMethod === "UPI" && <FiCheck className="payment-check" />}
+                  </div>
+                </label>
+              </div>
 
-
-
+              {/* UPI QR Code */}
+              {paymentMethod === "UPI" && (
+                <div className="upi-section">
+                  <div className="upi-toggle">
+                    <button
+                      className={`toggle-btn ${!isMobile ? "active" : ""}`}
+                      onClick={() => setShowQRCode(true)}
+                    >
+                      <FaQrcode /> QR Code
+                    </button>
+                    <button
+                      className={`toggle-btn ${isMobile ? "active" : ""}`}
+                      onClick={() => setShowQRCode(false)}
+                    >
+                      <FiCreditCard /> Apps
+                    </button>
                   </div>
 
+                  {showQRCode ? (
+                    <div className="qr-box">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=clayware@upi&pn=ClayWare&am=${finalAmount}&cu=INR`}
+                        alt="UPI QR Code"
+                        className="qr-image"
+                        onError={(e) => {
+                          e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=clayware@upi&pn=ClayWare&am=${finalAmount}`;
+                        }}
+                      />
+                      <div className="qr-info">
+                        <p className="qr-amount">₹{finalAmount}</p>
+                        <p className="qr-merchant">ClayWare</p>
+                        <p className="qr-upi">clayware@upi</p>
+                        <p className="qr-hint">Scan with any UPI app</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="upi-apps">
+                      <p className="apps-label">Pay with your preferred app</p>
+                      <div className="apps-grid">
+                        {[
+                          { name: "Google Pay", icon: SiGooglepay },
+                          { name: "PhonePe", icon: SiPhonepe },
+                          { name: "Paytm", icon: SiPaytm },
+                        ].map((app) => {
+                          const Icon = app.icon;
+                          return (
+                            <button
+                              key={app.name}
+                              className="app-btn"
+                              onClick={() => placeOrder()}
+                            >
+                              <Icon />
+                              <span>{app.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-
-                ))}
-
-
-
+              <div className="payment-brands">
+                <span>Secure Payments:</span>
+                <SiVisa />
+                <SiMastercard />
+                <SiGooglepay />
+                <SiPaytm />
+                <SiPhonepe />
               </div>
-
-
-
-
-
-              {/* PRICE DETAILS */}
-
-
-
-              <div className="price-details">
-
-
-
-                <div>
-
-                  <span>
-                    Total Items
-                  </span>
-
-
-                  <span>
-
-                    {
-                      cart.total_items
-                    }
-
-                  </span>
-
-
-                </div>
-
-
-
-
-
-                <div>
-
-                  <span>
-                    Price
-                  </span>
-
-
-                  <span>
-
-                    ₹
-                    {
-                      cart.total_original_price
-                    }
-
-                  </span>
-
-
-                </div>
-
-
-
-
-
-                <div>
-
-                  <span>
-                    Discount
-                  </span>
-
-
-                  <span className="discount">
-
-
-                    -₹
-                    {
-                      cart.total_savings
-                    }
-
-
-                  </span>
-
-
-                </div>
-
-
-
-
-
-                <div className="final-price">
-
-
-                  <span>
-
-                    Total Amount
-
-                  </span>
-
-
-                  <span>
-
-                    ₹
-                    {
-                      finalAmount
-                    }
-
-                  </span>
-
-
-                </div>
-
-
-
-              </div>
-
-
-
-
-
-              {/* PLACE ORDER BUTTON */}
-
-
-
-              <button
-
-                className="place-order-btn"
-
-
-                disabled={
-                  placingOrder ||
-                  processingPayment
-                }
-
-
-                onClick={
-                  placeOrder
-                }
-
-              >
-
-
-                {
-                  placingOrder
-
-                  ? "Processing..."
-
-                  : paymentMethod==="COD"
-
-                  ? "Place Order"
-
-                  : "Pay Now"
-
-                }
-
-
-              </button>
-
-
-
-
-
-              <div className="secure-payment">
-
-
-                <FiLock />
-
-
-                Secure checkout powered by ClayWare
-
-
-
-              </div>
-
-
-
             </div>
-
-
-
           </div>
 
+          {/* =========================
+              RIGHT SECTION - ORDER SUMMARY
+          ========================== */}
+          <div className="checkout-right">
+            <div className="summary-card">
+              <h2 className="summary-title">Order Summary</h2>
 
+              {/* Products */}
+              <div className="summary-products">
+                {cart.cart_items.map((item) => (
+                  <div className="summary-product" key={item.cart_item_id}>
+                    <img src={item.product_image} alt={item.product_name} className="product-image" />
+                    <div className="product-details">
+                      <h4>{item.product_name}</h4>
+                      {item.variant_capacity && (
+                        <p className="product-variant">Size: {item.variant_capacity}</p>
+                      )}
+                      <p className="product-qty">Qty: {item.quantity}</p>
+                    </div>
+                    <span className="product-price">₹{item.subtotal_discount_price}</span>
+                  </div>
+                ))}
+              </div>
 
+              {/* Price Details */}
+              <div className="price-details">
+                <div className="price-row">
+                  <span className="price-label">Items ({cart.total_items})</span>
+                  <span className="price-value">₹{cart.total_original_price}</span>
+                </div>
+                <div className="price-row discount">
+                  <span className="price-label">Discount</span>
+                  <span className="discount-amount">-₹{cart.total_savings}</span>
+                </div>
+                <div className="price-row">
+                  <span className="price-label">Delivery</span>
+                  <span className="free-delivery">FREE</span>
+                </div>
+              </div>
+
+              {/* Savings Badge */}
+              {cart.total_savings > 0 && (
+                <div className="savings-badge">
+                  <FiGift className="savings-icon" />
+                  <span>You saved ₹{cart.total_savings}</span>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="price-total">
+                <span className="total-label">Total</span>
+                <span className="total-amount">₹{finalAmount}</span>
+              </div>
+
+              {/* Delivery Info */}
+              <div className="delivery-info">
+                <FiClock className="delivery-icon" />
+                <div>
+                  <p className="delivery-label">Delivery by</p>
+                  <p className="delivery-date">15 July, 2025</p>
+                  <span className="delivery-free">Free Delivery</span>
+                </div>
+              </div>
+
+              {/* Secure Payment Footer */}
+              <div className="secure-footer">
+                <FiLock className="secure-icon" />
+                <span>100% Secure Payments powered by Razorpay</span>
+              </div>
+
+              {/* Place Order Button */}
+              <button
+                className="place-order-btn"
+                disabled={placingOrder || processingPayment || !selectedAddress}
+                onClick={placeOrder}
+              >
+                {placingOrder ? (
+                  <>
+                    <span className="btn-loader"></span>
+                    Processing...
+                  </>
+                ) : (
+                  `Pay ₹${finalAmount}`
+                )}
+              </button>
+            </div>
+          </div>
         </div>
-
-
-
       </div>
 
-
-
-
-
-      {/* =========================
-          PAYMENT OVERLAY
-      ========================== */}
-
-
-
+      {/* Payment Overlay */}
       {showOverlay && (
-
-
         <div className="payment-overlay">
-
-
-
-          <div className="clay-loader">
-
-
-
-            <div className="clay-circle">
-
-
-            </div>
-
-
-
-
-            <h3>
-
-              {loadingText}
-
-            </h3>
-
-
-
-            <p>
-
-              Please don't refresh or close this page
-
-            </p>
-
-
-
+          <div className="payment-overlay-content">
+            <div className="loader-spinner"></div>
+            <h3>{loadingText}</h3>
+            <p>Please don't refresh or close this page</p>
           </div>
-
-
-
         </div>
-
-
       )}
 
-
-
-
-
       <Footer />
-
-
     </>
-
   );
-
 }
-
 
 export default Checkout;

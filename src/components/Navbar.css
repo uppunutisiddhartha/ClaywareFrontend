@@ -8,826 +8,911 @@
    NAVBAR
 ========================================== */
 
-.navbar{
-    position: sticky;
-    top: 0;
-    left: 0;
-    width: 100%;
-
-    height: 78px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 0 7%;
-
-    background: rgba(255,255,255,.92);
-
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-
-    border-bottom: 1px solid rgba(0,0,0,.06);
-
-    z-index: 1000;
-
-    font-family: "Poppins", sans-serif;
-
-    transition: .35s ease;
+.navbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  font-family: "Poppins", sans-serif;
+  transition: 0.35s ease;
 }
 
 /* ==========================================
    LOGO
 ========================================== */
 
-.logo{
-
-    font-size: 30px;
-
-    font-weight: 800;
-
-    letter-spacing: 2px;
-
-    color: #8a4b16;
-
-    cursor: pointer;
-
-    user-select: none;
-
-    transition: .3s;
+.logo {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #8a4b16;
+  cursor: pointer;
+  user-select: none;
+  transition: 0.3s;
+  flex-shrink: 0;
 }
 
-.logo:hover{
-
-    color: #b86b29;
-
-    transform: scale(1.04);
+.logo:hover {
+  color: #b86b29;
+  transform: scale(1.04);
 }
 
 /* ==========================================
    NAVIGATION
 ========================================== */
 
-nav{
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 42px;
+nav {
+  display: flex;
+  align-items: center;
+  gap: 42px;
 }
 
-nav a{
-
-    position: relative;
-
-    text-decoration: none;
-
-    color: #333;
-
-    font-size: 15px;
-
-    font-weight: 600;
-
-    letter-spacing: .5px;
-
-    transition: .3s;
+nav a {
+  position: relative;
+  text-decoration: none;
+  color: #333;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: 0.3s;
+  white-space: nowrap;
 }
 
-nav a::after{
-
-    content: "";
-
-    position: absolute;
-
-    left: 0;
-
-    bottom: -8px;
-
-    width: 0;
-
-    height: 2px;
-
-    background: #b86b29;
-
-    border-radius: 10px;
-
-    transition: .35s;
+nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 0;
+  height: 2px;
+  background: #b86b29;
+  border-radius: 10px;
+  transition: 0.35s;
 }
 
-nav a:hover{
-
-    color: #b86b29;
+nav a:hover {
+  color: #b86b29;
 }
 
-nav a:hover::after{
-
-    width: 100%;
+nav a:hover::after {
+  width: 100%;
 }
 
 /* ==========================================
    RIGHT SIDE
 ========================================== */
 
-.nav-actions{
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 20px;
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
 }
 
 /* ==========================================
    ICONS
 ========================================== */
 
-.nav-icon{
-
-    font-size: 22px;
-
-    color: #444;
-
-    cursor: pointer;
-
-    transition: .3s;
+.nav-icon {
+  font-size: 22px;
+  color: #444;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-.nav-icon:hover{
-
-    color: #b86b29;
-
-    transform: translateY(-2px);
+.nav-icon:hover {
+  color: #b86b29;
+  transform: translateY(-2px);
 }
 
 /* ==========================================
    CART
 ========================================== */
 
-.cart-wrapper{
-
-    position: relative;
-
-    cursor: pointer;
+.cart-wrapper {
+  position: relative;
+  cursor: pointer;
 }
 
-.cart-icon{
-
-    font-size: 24px;
+.cart-icon {
+  font-size: 24px;
 }
 
-.cart-badge{
-
-    position: absolute;
-
-    top: -8px;
-
-    right: -10px;
-
-    min-width: 20px;
-
-    height: 20px;
-
-    padding: 0 5px;
-
-    border-radius: 50px;
-
-    background: #ff3b30;
-
-    color: white;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    box-shadow: 0 4px 10px rgba(255,59,48,.35);
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 50px;
+  background: #ff3b30;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(255, 59, 48, 0.35);
 }
 
 /* ==========================================
    LOGIN BUTTON
 ========================================== */
 
-.login-btn{
-
-    border: none;
-
-    outline: none;
-
-    cursor: pointer;
-
-    padding: 11px 24px;
-
-    border-radius: 50px;
-
-    background: linear-gradient(
-        135deg,
-        #b86b29,
-        #8a4b16
-    );
-
-    color: white;
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-    letter-spacing: .5px;
-
-    transition: .35s;
-
-    box-shadow: 0 10px 22px rgba(184,107,41,.22);
+.login-btn {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 11px 24px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #b86b29, #8a4b16);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: 0.35s;
+  box-shadow: 0 10px 22px rgba(184, 107, 41, 0.22);
+  white-space: nowrap;
 }
 
-.login-btn:hover{
-
-    transform: translateY(-3px);
-
-    box-shadow: 0 15px 28px rgba(184,107,41,.35);
+.login-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 28px rgba(184, 107, 41, 0.35);
 }
 
-.login-btn:active{
-
-    transform: scale(.96);
+.login-btn:active {
+  transform: scale(0.96);
 }
 
 /* ==========================================
    MOBILE MENU ICON
 ========================================== */
 
-.mobile-menu{
+.mobile-menu {
+  display: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #333;
+  transition: 0.3s;
+}
 
-    display: none;
-
-    font-size: 28px;
-
-    cursor: pointer;
-
-    color: #333;
+.mobile-menu:hover {
+  color: #b86b29;
 }
 
 /* ==========================================
-   SMALL ANIMATIONS
+   ANIMATIONS
 ========================================== */
 
-.cart-wrapper:hover .cart-icon{
-
-    transform: translateY(-2px);
+.cart-wrapper:hover .cart-icon {
+  transform: translateY(-2px);
 }
 
 .nav-icon,
 .cart-icon,
 .login-btn,
 .logo,
-nav a{
-
-    transition: all .3s ease;
+nav a {
+  transition: all 0.3s ease;
 }
+
 /* ==========================================
    ACCOUNT MENU
 ========================================== */
 
-.account-menu{
-    position: relative;
-    display: flex;
-    align-items: center;
+.account-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 /* ==========================================
    ACCOUNT BUTTON
 ========================================== */
 
-.account-btn{
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    border: none;
-    outline: none;
-    background: transparent;
-
-    cursor: pointer;
-
-    padding: 8px 14px;
-
-    border-radius: 50px;
-
-    transition: all .3s ease;
+.account-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 50px;
+  transition: all 0.3s ease;
 }
 
-.account-btn:hover{
-    background: rgba(184,107,41,.08);
+.account-btn:hover {
+  background: rgba(184, 107, 41, 0.08);
 }
 
 /* ==========================================
    AVATAR
 ========================================== */
 
-.avatar-circle{
-    width: 42px;
-    height: 42px;
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: linear-gradient(
-        135deg,
-        #b86b29,
-        #8a4b16
-    );
-
-    color: white;
-
-    font-size: 19px;
-
-    box-shadow: 0 8px 18px rgba(184,107,41,.25);
+.avatar-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #b86b29, #8a4b16);
+  color: white;
+  font-size: 19px;
+  box-shadow: 0 8px 18px rgba(184, 107, 41, 0.25);
+  flex-shrink: 0;
 }
 
-.account-btn span{
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
+.account-btn span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
 }
 
 /* ==========================================
    ARROW
 ========================================== */
 
-.account-btn svg:last-child{
-    transition: .3s;
+.account-btn svg:last-child {
+  transition: 0.3s;
 }
 
-.rotate{
-    transform: rotate(180deg);
+.rotate {
+  transform: rotate(180deg);
 }
 
 /* ==========================================
    DROPDOWN
 ========================================== */
 
-.account-dropdown{
-
-    position: absolute;
-
-    top: 62px;
-    right: 0;
-
-    width: 290px;
-
-    background: rgba(255,255,255,.96);
-
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-
-    border-radius: 18px;
-
-    border: 1px solid rgba(255,255,255,.4);
-
-    overflow: hidden;
-
-    box-shadow:
-        0 20px 45px rgba(0,0,0,.12);
-
-    animation: dropdown .28s ease;
-
-    z-index: 1000;
+.account-dropdown {
+  position: absolute;
+  top: 62px;
+  right: 0;
+  width: 290px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12);
+  animation: dropdown 0.28s ease;
+  z-index: 1000;
 }
 
-@keyframes dropdown{
-
-    from{
-        opacity: 0;
-        transform: translateY(-15px);
-    }
-
-    to{
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes dropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ==========================================
-   HEADER
+   DROPDOWN HEADER
 ========================================== */
 
-.dropdown-header{
-
-    display: flex;
-    align-items: center;
-    gap: 15px;
-
-    padding: 22px;
-
-    background: linear-gradient(
-        135deg,
-        #fdf5ef,
-        #fffaf7
-    );
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 22px;
+  background: linear-gradient(135deg, #fdf5ef, #fffaf7);
 }
 
-/* ==========================================
-   LARGE AVATAR
-========================================== */
-
-.profile-avatar{
-
-    width: 55px;
-    height: 55px;
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: linear-gradient(
-        135deg,
-        #b86b29,
-        #8a4b16
-    );
-
-    color: white;
-
-    font-size: 23px;
-
-    flex-shrink: 0;
+.profile-avatar {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #b86b29, #8a4b16);
+  color: white;
+  font-size: 23px;
+  flex-shrink: 0;
 }
 
-.dropdown-header h4{
-
-    margin: 0;
-
-    font-size: 16px;
-
-    color: #222;
-
-    font-weight: 700;
+.dropdown-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #222;
+  font-weight: 700;
 }
 
-.dropdown-header p{
-
-    margin-top: 4px;
-
-    font-size: 12px;
-
-    color: #777;
-
-    word-break: break-word;
+.dropdown-header p {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #777;
+  word-break: break-word;
 }
 
 /* ==========================================
    DIVIDER
 ========================================== */
 
-.dropdown-divider{
-    height: 1px;
-    background: #ececec;
+.dropdown-divider {
+  height: 1px;
+  background: #ececec;
 }
 
 /* ==========================================
    MENU ITEM
 ========================================== */
 
-.dropdown-item{
-
-    display: flex;
-    align-items: center;
-
-    gap: 15px;
-
-    padding: 15px 22px;
-
-    cursor: pointer;
-
-    transition: .25s;
-
-    color: #444;
-
-    font-size: 14px;
-
-    font-weight: 500;
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 22px;
+  cursor: pointer;
+  transition: 0.25s;
+  color: #444;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.dropdown-item svg{
-
-    font-size: 19px;
-
-    color: #777;
-
-    transition: .3s;
+.dropdown-item svg {
+  font-size: 19px;
+  color: #777;
+  transition: 0.3s;
 }
 
-/* ==========================================
-   HOVER EFFECT
-========================================== */
-
-.dropdown-item:hover{
-
-    background: rgba(184,107,41,.08);
-
-    color: #b86b29;
+.dropdown-item:hover {
+  background: rgba(184, 107, 41, 0.08);
+  color: #b86b29;
 }
 
-.dropdown-item:hover svg{
-
-    color: #b86b29;
-
-    transform: translateX(3px);
+.dropdown-item:hover svg {
+  color: #b86b29;
+  transform: translateX(3px);
 }
 
 /* ==========================================
    LOGOUT
 ========================================== */
 
-.logout{
-
-    color: #d32f2f;
+.logout {
+  color: #d32f2f;
 }
 
-.logout svg{
-
-    color: #d32f2f;
+.logout svg {
+  color: #d32f2f;
 }
 
-.logout:hover{
-
-    background: rgba(211,47,47,.08);
-
-    color: #d32f2f;
+.logout:hover {
+  background: rgba(211, 47, 47, 0.08);
+  color: #d32f2f;
 }
 
-.logout:hover svg{
-
-    color: #d32f2f;
+.logout:hover svg {
+  color: #d32f2f;
 }
 
 /* ==========================================
    OPTIONAL BADGE
 ========================================== */
 
-.menu-badge{
-
-    margin-left: auto;
-
-    background: #ff3b30;
-
-    color: white;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    padding: 3px 8px;
-
-    border-radius: 50px;
+.menu-badge {
+  margin-left: auto;
+  background: #ff3b30;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 50px;
 }
 
 /* ==========================================
    SCROLLBAR
 ========================================== */
 
-.account-dropdown::-webkit-scrollbar{
-    width: 6px;
+.account-dropdown::-webkit-scrollbar {
+  width: 6px;
 }
 
-.account-dropdown::-webkit-scrollbar-thumb{
-    background: rgba(184,107,41,.4);
-    border-radius: 10px;
+.account-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(184, 107, 41, 0.4);
+  border-radius: 10px;
 }
 
-.account-dropdown::-webkit-scrollbar-track{
-    background: transparent;
+.account-dropdown::-webkit-scrollbar-track {
+  background: transparent;
 }
+
 /* ==========================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN - FIXED
 ========================================== */
 
 /* ---------- Large Tablets ---------- */
+@media (max-width: 1200px) {
+  .navbar {
+    padding: 0 5%;
+  }
 
-@media (max-width: 1100px){
+  nav {
+    gap: 32px;
+  }
 
-    .navbar{
-        padding: 0 5%;
-    }
+  .logo {
+    font-size: 28px;
+  }
 
-    nav{
-        gap: 28px;
-    }
+  .account-btn span {
+    display: none;
+  }
 
-    .logo{
-        font-size: 26px;
-    }
-
-    .account-btn span{
-        display: none;
-    }
-
-    .account-dropdown{
-        width: 270px;
-    }
-
+  .account-dropdown {
+    width: 270px;
+    right: -10px;
+  }
 }
 
 /* ---------- Tablets ---------- */
+@media (max-width: 1024px) {
+  .navbar {
+    height: 74px;
+    padding: 0 4%;
+  }
 
-@media (max-width: 900px){
+  .logo {
+    font-size: 26px;
+  }
 
-    .navbar{
-        height: 74px;
-    }
+  nav {
+    gap: 25px;
+  }
 
-    .mobile-menu{
-        display: block;
-        font-size: 28px;
-        cursor: pointer;
-        transition: .3s;
-    }
+  nav a {
+    font-size: 14px;
+  }
 
-    .mobile-menu:hover{
-        color: #b86b29;
-    }
+  .login-btn {
+    padding: 9px 18px;
+    font-size: 13px;
+  }
 
-    nav{
+  .account-btn {
+    padding: 6px 10px;
+  }
 
-        position: fixed;
+  .avatar-circle {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+}
 
-        top: 74px;
-        left: -100%;
+/* ---------- Mobile Menu Trigger ---------- */
+@media (max-width: 900px) {
+  .navbar {
+    height: 70px;
+    padding: 0 18px;
+  }
 
-        width: 280px;
+  .mobile-menu {
+    display: block;
+    font-size: 26px;
+  }
 
-        height: calc(100vh - 74px);
+  .mobile-menu:hover {
+    color: #b86b29;
+  }
 
-        background: rgba(255,255,255,.98);
+  nav {
+    position: fixed;
+    top: 70px;
+    left: -100%;
+    width: 280px;
+    height: calc(100vh - 70px);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 30px 24px;
+    gap: 24px;
+    transition: 0.35s ease;
+    box-shadow: 8px 0 35px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+  }
 
-        backdrop-filter: blur(18px);
+  nav.active {
+    left: 0;
+  }
 
-        display: flex;
+  nav a {
+    font-size: 16px;
+    width: 100%;
+    padding: 8px 0;
+  }
 
-        flex-direction: column;
+  nav a::after {
+    bottom: -4px;
+  }
 
-        justify-content: flex-start;
+  .login-btn {
+    display: none;
+  }
 
-        align-items: flex-start;
+  .nav-actions {
+    gap: 14px;
+  }
 
-        padding: 40px 30px;
+  .nav-icon {
+    font-size: 20px;
+  }
 
-        gap: 30px;
+  .cart-icon {
+    font-size: 22px;
+  }
 
-        transition: .35s ease;
+  .account-dropdown {
+    width: 260px;
+    right: -15px;
+    top: 56px;
+  }
 
-        box-shadow: 8px 0 35px rgba(0,0,0,.08);
-    }
+  .dropdown-header {
+    padding: 18px;
+  }
 
-    nav.active{
-        left: 0;
-    }
+  .dropdown-item {
+    padding: 14px 18px;
+  }
 
-    nav a{
-        font-size: 16px;
-        width: 100%;
-    }
+  .profile-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
 
-    .login-btn{
-        display: none;
-    }
+  .account-btn span {
+    display: none;
+  }
 
+  .account-btn {
+    padding: 4px 8px;
+  }
+
+  .avatar-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
 }
 
 /* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+  .navbar {
+    height: 66px;
+    padding: 0 14px;
+  }
 
-@media (max-width: 768px){
+  .logo {
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
 
-    .navbar{
-        padding: 0 18px;
-    }
+  .nav-actions {
+    gap: 12px;
+  }
 
-    .logo{
-        font-size: 22px;
-        letter-spacing: 1px;
-    }
+  .nav-icon {
+    font-size: 19px;
+  }
 
-    .nav-actions{
-        gap: 14px;
-    }
+  .cart-icon {
+    font-size: 20px;
+  }
 
-    .nav-icon{
-        font-size: 21px;
-    }
+  .cart-badge {
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    top: -7px;
+    right: -8px;
+  }
 
-    .avatar-circle{
-        width: 38px;
-        height: 38px;
-    }
+  nav {
+    top: 66px;
+    height: calc(100vh - 66px);
+    width: 260px;
+    padding: 24px 20px;
+    gap: 20px;
+  }
 
-    .account-dropdown{
+  nav a {
+    font-size: 15px;
+  }
 
-        width: 260px;
+  .avatar-circle {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
 
-        right: -15px;
+  .account-dropdown {
+    width: 250px;
+    right: -20px;
+    top: 52px;
+  }
 
-        top: 58px;
-    }
+  .dropdown-header {
+    padding: 16px;
+    gap: 12px;
+  }
 
-    .dropdown-header{
-        padding: 18px;
-    }
+  .profile-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
 
-    .dropdown-item{
-        padding: 14px 18px;
-    }
+  .dropdown-header h4 {
+    font-size: 15px;
+  }
 
+  .dropdown-header p {
+    font-size: 11px;
+  }
+
+  .dropdown-item {
+    padding: 12px 16px;
+    font-size: 13px;
+    gap: 12px;
+  }
+
+  .dropdown-item svg {
+    font-size: 17px;
+  }
 }
 
 /* ---------- Small Phones ---------- */
+@media (max-width: 576px) {
+  .navbar {
+    height: 62px;
+    padding: 0 12px;
+  }
 
-@media (max-width: 576px){
+  .logo {
+    font-size: 20px;
+    letter-spacing: 0.5px;
+  }
 
-    .navbar{
-        height: 70px;
-    }
+  .nav-actions {
+    gap: 10px;
+  }
 
-    nav{
-        top: 70px;
-        height: calc(100vh - 70px);
-        width: 250px;
-    }
+  .nav-icon {
+    font-size: 18px;
+  }
 
-    .logo{
-        font-size: 20px;
-    }
+  .cart-icon {
+    font-size: 19px;
+  }
 
-    .cart-badge{
+  .cart-badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+    top: -6px;
+    right: -7px;
+    padding: 0 4px;
+  }
 
-        min-width: 18px;
+  .mobile-menu {
+    font-size: 24px;
+  }
 
-        height: 18px;
+  nav {
+    top: 62px;
+    height: calc(100vh - 62px);
+    width: 240px;
+    padding: 20px 16px;
+    gap: 16px;
+  }
 
-        font-size: 10px;
-    }
+  nav a {
+    font-size: 14px;
+  }
 
-    .account-dropdown{
+  .avatar-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
 
-        width: 240px;
+  .account-btn {
+    padding: 2px 6px;
+  }
 
-        right: -20px;
-    }
+  .account-dropdown {
+    width: 230px;
+    right: -20px;
+    top: 48px;
+  }
 
-    .profile-avatar{
+  .dropdown-header {
+    padding: 14px;
+    gap: 10px;
+  }
 
-        width: 46px;
-        height: 46px;
+  .profile-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
 
-        font-size: 18px;
-    }
+  .dropdown-header h4 {
+    font-size: 14px;
+  }
 
-    .dropdown-header h4{
-        font-size: 15px;
-    }
+  .dropdown-header p {
+    font-size: 10px;
+  }
 
-    .dropdown-header p{
-        font-size: 11px;
-    }
+  .dropdown-item {
+    padding: 10px 14px;
+    font-size: 12px;
+    gap: 10px;
+  }
 
+  .dropdown-item svg {
+    font-size: 16px;
+  }
+
+  .login-btn {
+    display: none;
+  }
 }
 
 /* ---------- Very Small Devices ---------- */
+@media (max-width: 400px) {
+  .navbar {
+    height: 58px;
+    padding: 0 10px;
+  }
 
-@media (max-width: 400px){
+  .logo {
+    font-size: 18px;
+  }
 
-    .navbar{
-        padding: 0 12px;
-    }
+  .nav-actions {
+    gap: 8px;
+  }
 
-    .logo{
-        font-size: 18px;
-    }
+  .nav-icon {
+    font-size: 17px;
+  }
 
-    .nav-actions{
-        gap: 10px;
-    }
+  .cart-icon {
+    font-size: 18px;
+  }
 
-    .account-dropdown{
+  .cart-badge {
+    min-width: 14px;
+    height: 14px;
+    font-size: 8px;
+    top: -5px;
+    right: -6px;
+  }
 
-        width: 220px;
+  .mobile-menu {
+    font-size: 22px;
+  }
 
-        right: -15px;
-    }
+  nav {
+    top: 58px;
+    height: calc(100vh - 58px);
+    width: 220px;
+    padding: 16px 14px;
+    gap: 14px;
+  }
 
+  nav a {
+    font-size: 13px;
+  }
+
+  .avatar-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .account-dropdown {
+    width: 210px;
+    right: -15px;
+    top: 44px;
+  }
+
+  .dropdown-header {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .profile-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .dropdown-header h4 {
+    font-size: 13px;
+  }
+
+  .dropdown-item {
+    padding: 8px 12px;
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  .dropdown-item svg {
+    font-size: 14px;
+  }
+
+  .account-btn {
+    padding: 2px 4px;
+  }
+}
+
+/* ---------- Landscape Phones ---------- */
+@media (max-height: 600px) and (orientation: landscape) {
+  nav {
+    padding: 16px 20px;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  nav a {
+    font-size: 13px;
+    padding: 4px 0;
+  }
+
+  nav a::after {
+    bottom: -2px;
+  }
+
+  .dropdown-item {
+    padding: 8px 14px;
+  }
+}
+
+/* ==========================================
+   UTILITY - FIX OVERFLOW
+========================================== */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 /* ==========================================
    SMOOTH ANIMATIONS
 ========================================== */
-
 .navbar,
 .account-dropdown,
 .account-btn,
@@ -836,25 +921,60 @@ nav a{
 nav a,
 .nav-icon,
 .cart-wrapper,
-.login-btn{
-    transition: all .3s ease;
+.login-btn {
+  transition: all 0.3s ease;
 }
 
 /* ==========================================
    HOVER LIFT
 ========================================== */
-
 .cart-wrapper:hover,
 .account-btn:hover,
-.login-btn:hover{
-
-    transform: translateY(-2px);
+.login-btn:hover {
+  transform: translateY(-2px);
 }
 
 /* ==========================================
    REMOVE BLUE TAP HIGHLIGHT
 ========================================== */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
 
-*{
-    -webkit-tap-highlight-color: transparent;
+/* ==========================================
+   MOBILE MENU OVERLAY
+========================================== */
+@media (max-width: 900px) {
+  nav.active::before {
+    content: "";
+    position: fixed;
+    top: 70px;
+    left: 280px;
+    width: calc(100% - 280px);
+    height: calc(100vh - 70px);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
+    z-index: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  nav.active::before {
+    left: 260px;
+    width: calc(100% - 260px);
+  }
+}
+
+@media (max-width: 576px) {
+  nav.active::before {
+    left: 240px;
+    width: calc(100% - 240px);
+  }
+}
+
+@media (max-width: 400px) {
+  nav.active::before {
+    left: 220px;
+    width: calc(100% - 220px);
+  }
 }

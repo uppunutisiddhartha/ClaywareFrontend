@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import "./styles/ProductDetails.css";
 import WhyChooseUs from "../components/WhyChooseUs";
+
 import api from "../api/axios";
+
+import "./styles/ProductDetails.css";
 
 function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,21 +29,27 @@ function ProductDetails() {
 
   const [addingToCart, setAddingToCart] = useState(false);
 
+  // =====================================
+  // FETCH PRODUCT
+  // =====================================
+
   useEffect(() => {
     let cancelled = false;
 
-    setLoading(true);
-    setError(null);
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    axios
-      .get(`https://claywarebackend.onrender.com/api/accounts/product/${id}/`)
-      .then((res) => {
+        const res = await api.get(`accounts/product/${id}/`);
+
         if (cancelled) return;
 
         const data = res.data;
 
         setProduct(data);
 
+        // Images
         const imgs =
           data.product_images?.map((img) => img.image) || data.images || [];
 
@@ -47,73 +57,81 @@ function ProductDetails() {
           setSelectedImage(imgs[0]);
         }
 
-        // Default selection is Standard Product
-        setSelectedVariant({
-          id: null,
-          capacity: "Standard",
-          price: data.price,
-          discount_price: data.discount_price,
-          stock_quantity: data.stock_quantity,
-          isBase: true,
-        });
-      })
-      .catch(() => {
+        // =====================================
+        // AUTO SELECT FIRST AVAILABLE VARIANT
+        // =====================================
+
+        if (data.variants && data.variants.length > 0) {
+          // First variant having stock
+          const availableVariant =
+            data.variants.find((v) => Number(v.stock_quantity) > 0) ||
+            data.variants[0];
+
+          setSelectedVariant({
+            ...availableVariant,
+            isBase: false,
+          });
+        } else {
+          // Product without variants
+          setSelectedVariant({
+            id: null,
+            capacity: "Standard",
+            price: data.price,
+            discount_price: data.discount_price,
+            stock_quantity: data.stock_quantity,
+            isBase: true,
+          });
+        }
+      } catch (err) {
         if (!cancelled) {
+          console.error(err);
           setError("We couldn't load this product. Please try again.");
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setLoading(false);
         }
-      });
+      }
+    };
+
+    fetchProduct();
 
     return () => {
       cancelled = true;
     };
   }, [id]);
-
-  if (loading) {
-    return (
-      <div className="pdp-loader-container">
-        <div className="pdp-spinner" />
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="pdp-page">
-        <Navbar />
-        <div className="pdp-error-container">
-          <p>{error || "Product not found."}</p>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  // =====================================
+  // PRODUCT IMAGES
+  // =====================================
 
   const images =
-    product.product_images?.map((i) => i.image) || product.images || [];
+    product?.product_images?.map((img) => img.image) || product?.images || [];
 
-  // ==========================
-  // Standard + Variants
-  // ==========================
-  const allVariants = [
-    {
-      id: null,
-      capacity: "Standard",
-      price: product.price,
-      discount_price: product.discount_price,
-      stock_quantity: product.stock_quantity,
-      isBase: true,
-    },
+  // =====================================
+  // STANDARD + VARIANTS
+  // =====================================
 
-    ...(product.variants || []).map((v) => ({
-      ...v,
-      isBase: false,
-    })),
-  ];
+  const allVariants = product
+    ? [
+        {
+          id: null,
+          capacity: "Standard",
+          price: product.price,
+          discount_price: product.discount_price,
+          stock_quantity: product.stock_quantity,
+          isBase: true,
+        },
+
+        ...(product.variants || []).map((variant) => ({
+          ...variant,
+          isBase: false,
+        })),
+      ]
+    : [];
+
+  // =====================================
+  // PRICE
+  // =====================================
 
   const mrp = Number(selectedVariant?.price || 0);
 
@@ -126,9 +144,25 @@ function ProductDetails() {
   const discount =
     mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
 
+  // =====================================
+  // STOCK
+  // =====================================
+
   const stock = Number(selectedVariant?.stock_quantity || 0);
 
   const inStock = stock > 0;
+
+  let stockMessage = "Out of Stock";
+
+  if (stock > 10) {
+    stockMessage = `${stock} in stock`;
+  } else if (stock > 0) {
+    stockMessage = `Only ${stock} left`;
+  }
+
+  // =====================================
+  // IMAGE ZOOM
+  // =====================================
 
   const handleMouseMove = (e) => {
     const { left, top, width, height } =
@@ -149,24 +183,42 @@ function ProductDetails() {
 
   const resetZoom = () => {
     setIsZooming(false);
+
     setZoomStyle({
       transform: "scale(1)",
     });
   };
 
+  // =====================================
+  // QUANTITY
+  // =====================================
+
   const decreaseQty = () => {
-    setQuantity((q) => Math.max(1, q - 1));
+    setQuantity((prev) => Math.max(1, prev - 1));
   };
 
   const increaseQty = () => {
-    setQuantity((q) => Math.min(stock || 1, q + 1));
+    if (quantity < stock) {
+      setQuantity((prev) => prev + 1);
+    }
   };
+
+  // Reset quantity whenever variant changes
+
+  useEffect(() => {
+    setQuantity(1);
+  }, [selectedVariant]);
+
+  // =====================================
+  // ADD TO CART
+  // =====================================
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
       alert("Please login first.");
+      navigate("/login");
       return;
     }
 
@@ -184,21 +236,15 @@ function ProductDetails() {
     } catch (error) {
       console.error(error);
 
-      if (error.response?.status === 401) {
-        alert("Please login again.");
-      } else if (error.response?.status === 403) {
-        alert("Only customers can add products to cart.");
-      } else {
-        alert(
-          error.response?.data?.message || "Unable to add product to cart.",
-        );
-      }
+      alert(error.response?.data?.message || "Unable to add product to cart.");
     } finally {
       setAddingToCart(false);
     }
   };
 
-  // handlebuy Now
+  // =====================================
+  // BUY NOW
+  // =====================================
 
   const handleBuyNow = () => {
     const token = localStorage.getItem("token");
@@ -214,165 +260,250 @@ function ProductDetails() {
         buyNow: true,
         product_id: product.id,
         variant_id: selectedVariant?.isBase ? null : selectedVariant.id,
-        quantity: quantity,
+        quantity,
       },
     });
   };
+  // =====================================
+  // VARIANT CHANGE
+  // =====================================
+
+  const handleVariantChange = (variant) => {
+    setSelectedVariant(variant);
+    setQuantity(1);
+
+    // Change image if variant has image (future support)
+    if (variant.image) {
+      setSelectedImage(variant.image);
+    }
+  };
+
+  // =====================================
+  // LOADING UI
+  // =====================================
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+
+        <div className="product-loader">
+          <div className="clay-loader"></div>
+          <p>Loading product...</p>
+        </div>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =====================================
+  // ERROR UI
+  // =====================================
+
+  if (error || !product) {
+    return (
+      <>
+        <Navbar />
+
+        <div className="product-error">
+          <h2>Something went wrong</h2>
+
+          <p>{error || "Product not found"}</p>
+
+          <button onClick={() => navigate("/shop")}>Back to Shop</button>
+        </div>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // =====================================
+  // PRODUCT UI
+  // =====================================
 
   return (
-    <div className="pdp-page">
+    <>
       <Navbar />
 
-      <div className="pdp-container">
-        {/* LEFT */}
-        <div className="pdp-left">
-          <div className="pdp-thumbs">
+      <section className="product-details-container">
+        {/* =========================
+            IMAGE SECTION
+        ========================= */}
+
+        <div className="product-gallery">
+          <div className="thumbnail-list">
             {images.map((img, index) => (
-              <button
+              <img
                 key={index}
-                className={`thumb-btn ${selectedImage === img ? "active" : ""}`}
+                src={img}
+                alt={product.productname}
+                className={selectedImage === img ? "active-thumb" : ""}
                 onClick={() => setSelectedImage(img)}
-              >
-                <img src={img} alt={`thumb-${index}`} className="thumb" />
-              </button>
+              />
             ))}
           </div>
 
           <div
-            className={`pdp-image-box ${isZooming ? "zooming" : ""}`}
+            className="main-image-box"
             onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={resetZoom}
           >
-            {selectedImage ? (
-              <img
-                src={selectedImage}
-                alt={product.productname}
-                className="main-img"
-                style={zoomStyle}
-              />
-            ) : (
-              <div className="no-image">No Image Available</div>
-            )}
+            <img
+              src={selectedImage}
+              alt={product.productname}
+              style={
+                isZooming
+                  ? zoomStyle
+                  : {
+                      transform: "scale(1)",
+                    }
+              }
+              className="main-product-image"
+            />
           </div>
         </div>
 
-        {/* RIGHT */}
-        <div className="pdp-right">
-          <p className="brand">{product.seller}</p>
+        {/* =========================
+            PRODUCT INFO
+        ========================= */}
 
-          <h1 className="title">{product.productname}</h1>
+        <div className="product-info">
+          <h1>{product.productname}</h1>
 
-          <div className="price-box">
-            <span className="price">₹{sellingPrice}</span>
-
-            {discount > 0 && (
-              <>
-                <span className="mrp">₹{mrp}</span>
-
-                <span className="off">{discount}% OFF</span>
-              </>
-            )}
+          <div className="rating-box">
+            ⭐ 4.5
+            <span>(120 Reviews)</span>
           </div>
 
-          <p className={`stock-pill ${inStock ? "in" : "out"}`}>
-            {inStock ? `${stock} in stock` : "Out of stock"}
-          </p>
+          <p className="description">{product.description}</p>
 
-          {/* VARIANTS */}
+          {/* PRICE */}
 
-          <div className="variants">
-            <h4>Available Options</h4>
+          <div className="price-section">
+            {discount > 0 && <span className="discount">{discount}% OFF</span>}
 
-            <div className="variant-list">
-              {allVariants.map((variant) => {
-                const active =
-                  selectedVariant?.id === variant.id &&
-                  selectedVariant?.isBase === variant.isBase;
+            <h2>₹{sellingPrice}</h2>
 
-                return (
+            {mrp !== sellingPrice && <del>₹{mrp}</del>}
+          </div>
+
+          {/* STOCK */}
+
+          <div className={inStock ? "stock available" : "stock unavailable"}>
+            {stockMessage}
+          </div>
+
+          {/* =====================
+              VARIANTS
+          ====================== */}
+
+          {allVariants.length > 1 && (
+            <div className="variant-section">
+              <h3>Select Capacity</h3>
+
+              <div className="variant-buttons">
+                {allVariants.map((variant) => (
                   <button
-                    key={variant.isBase ? "base" : variant.id}
-                    className={`variant ${active ? "active" : ""} ${
-                      Number(variant.stock_quantity) <= 0 ? "out-of-stock" : ""
-                    }`}
-                    onClick={() => setSelectedVariant(variant)}
+                    key={variant.id || "standard"}
+                    className={
+                      selectedVariant?.id === variant.id &&
+                      selectedVariant?.isBase === variant.isBase
+                        ? "selected"
+                        : ""
+                    }
+                    disabled={Number(variant.stock_quantity) <= 0}
+                    onClick={() => handleVariantChange(variant)}
                   >
-                    <span className="variant-capacity">{variant.capacity}</span>
-
-                    <span className="variant-price">
-                      ₹{variant.discount_price || variant.price}
-                    </span>
-
-                    {variant.discount_price &&
-                      Number(variant.discount_price) <
-                        Number(variant.price) && (
-                        <span className="variant-mrp">₹{variant.price}</span>
-                      )}
-
-                    <span className="variant-stock">
-                      {variant.stock_quantity > 0
-                        ? `${variant.stock_quantity} Available`
-                        : "Out of Stock"}
-                    </span>
+                    {variant.capacity}
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-          {/* ABOUT PRODUCT */}
-          <div className="about-block">
-            <h4 className="section-title">About this product</h4>
-
-            <div className="about-card">
-              <p className="about-text">
-                {product.description?.trim()
-                  ? product.description
-                  : "This product is crafted with premium quality materials, designed for durability and daily use."}
-              </p>
-            </div>
-          </div>
+          )}
 
           {/* QUANTITY */}
-          <div className="quantity-block">
-            <h4>Quantity</h4>
 
-            <div className="quantity-stepper">
-              <button onClick={decreaseQty} disabled={!inStock}>
-                −
-              </button>
+          <div className="quantity-section">
+            <button onClick={decreaseQty}>-</button>
 
-              <span className="quantity-value">{quantity}</span>
+            <span>{quantity}</span>
 
-              <button onClick={increaseQty} disabled={!inStock}>
-                +
-              </button>
-            </div>
+            <button onClick={increaseQty} disabled={quantity >= stock}>
+              +
+            </button>
           </div>
+          {/* =====================
+              ACTION BUTTONS
+          ====================== */}
 
-          {/* ACTIONS */}
-          <div className="actions">
+          <div className="action-buttons">
             <button
-              className="add-to-cart"
-              disabled={!inStock || addingToCart}
+              className="add-cart-btn"
               onClick={handleAddToCart}
+              disabled={!inStock || addingToCart}
             >
               {addingToCart ? "Adding..." : "Add to Cart"}
             </button>
 
-            <button className="buy" disabled={!inStock} onClick={handleBuyNow}>
+            <button
+              className="buy-now-btn"
+              onClick={handleBuyNow}
+              disabled={!inStock}
+            >
               Buy Now
             </button>
           </div>
-        </div>
-      </div>
 
-      <div className="Why">
-        <WhyChooseUs />
-      </div>
+          {/* =====================
+              PRODUCT FEATURES
+          ====================== */}
+
+          <div className="product-features">
+            <div className="feature-card">
+              🚚
+              <div>
+                <h4>Free Delivery</h4>
+
+                <p>On orders above ₹350</p>
+              </div>
+            </div>
+
+            <div className="feature-card">
+              🛡️
+              <div>
+                <h4>ClayWare Assured</h4>
+
+                <p>Quality checked products</p>
+              </div>
+            </div>
+
+            <div className="feature-card">
+              🔄
+              <div>
+                <h4>Easy Returns</h4>
+
+                <p>Hassle free replacement</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================
+          WHY CHOOSE US
+      ========================== */}
+
+      <WhyChooseUs />
+
+      {/* =========================
+          FOOTER
+      ========================== */}
 
       <Footer />
-    </div>
+    </>
   );
 }
 
