@@ -23,6 +23,11 @@ import {
   FiX,
   FiChevronDown,
   FiArrowLeft,
+  FiMapPin,
+  FiHome,
+  FiBriefcase,
+  FiSmartphone,
+  FiDollarSign,
 } from "react-icons/fi";
 
 import {
@@ -82,6 +87,7 @@ function Checkout() {
   const [searchAddress, setSearchAddress] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAddressDrawerVisible, setIsAddressDrawerVisible] = useState(false);
 
   // =====================================
   // CHECK DEVICE
@@ -196,6 +202,9 @@ function Checkout() {
       if (res.data.address_id) {
         setSelectedAddress(res.data.address_id);
       }
+      
+      // Close drawer after saving
+      setShowAddressDrawer(false);
     } catch (err) {
       console.error("Save Address Error:", err);
       alert("Unable to save address");
@@ -237,7 +246,6 @@ function Checkout() {
     });
     setEditingAddress(address.address_id);
     setShowForm(true);
-    setShowAddressDrawer(false);
   };
 
   // =====================================
@@ -360,7 +368,7 @@ function Checkout() {
           contact: selectedAddr?.phone_number || "",
         },
         theme: {
-          color: "#b86b3c",
+          color: "#C86A2B",
         },
       };
 
@@ -397,6 +405,18 @@ function Checkout() {
   );
 
   // =====================================
+  // GET ADDRESS ICON
+  // =====================================
+
+  const getAddressIcon = (type) => {
+    switch(type?.toLowerCase()) {
+      case 'home': return <FiHome />;
+      case 'work': return <FiBriefcase />;
+      default: return <FiMapPin />;
+    }
+  };
+
+  // =====================================
   // LOADING SCREEN
   // =====================================
 
@@ -405,10 +425,24 @@ function Checkout() {
       <>
         <Navbar />
         <div className="checkout-loader">
-          <div className="loader-skeleton">
-            <div className="skeleton-shimmer"></div>
+          <div className="skeleton-container">
+            <div className="skeleton-card">
+              <div className="skeleton-line large"></div>
+              <div className="skeleton-line"></div>
+              <div className="skeleton-line"></div>
+            </div>
+            <div className="skeleton-card">
+              <div className="skeleton-line large"></div>
+              <div className="skeleton-line"></div>
+              <div className="skeleton-line"></div>
+            </div>
+            <div className="skeleton-card right">
+              <div className="skeleton-line large"></div>
+              <div className="skeleton-line"></div>
+              <div className="skeleton-line"></div>
+              <div className="skeleton-line"></div>
+            </div>
           </div>
-          <h3>Loading Checkout...</h3>
         </div>
         <Footer />
       </>
@@ -425,17 +459,20 @@ function Checkout() {
           ========================== */}
           <div className="checkout-left">
             {/* SHIPPING ADDRESS */}
-            <div className="checkout-card">
+            <div className="checkout-card address-card">
               <div className="card-header">
-                <h2 className="section-title">Shipping Address</h2>
+                <div className="header-left">
+                  <FiMapPin className="header-icon" />
+                  <h2 className="section-title">Deliver To</h2>
+                </div>
               </div>
 
               {/* Selected Address */}
-              {selectedAddress && (
-                <div className="selected-address">
-                  {addresses.filter(a => a.address_id === selectedAddress).map(address => (
-                    <div key={address.address_id} className="address-block">
-                      <div className="address-row">
+              {selectedAddress && addresses.filter(a => a.address_id === selectedAddress).length > 0 ? (
+                addresses.filter(a => a.address_id === selectedAddress).map(address => (
+                  <div key={address.address_id} className="selected-address premium">
+                    <div className="address-info">
+                      <div className="address-name-row">
                         <span className="address-name">{address.full_name}</span>
                         <span className="address-phone">{address.phone_number}</span>
                       </div>
@@ -445,307 +482,109 @@ function Checkout() {
                       <div className="address-tags">
                         {address.is_default && <span className="tag-default">Default</span>}
                         <span className={`tag-type ${address.address_type.toLowerCase()}`}>
+                          {getAddressIcon(address.address_type)}
                           {address.address_type}
                         </span>
                       </div>
-                      <button 
-                        className="change-address-link"
-                        onClick={() => setShowAddressDrawer(true)}
-                      >
-                        Change Address
-                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Address Drawer with Form Inside */}
-              {showAddressDrawer && (
-                <div className="drawer-overlay" onClick={() => {
-                  if (!showForm) {
-                    setShowAddressDrawer(false);
-                  }
-                }}>
-                  <div className={`drawer ${isMobile ? 'bottom' : 'side'}`} onClick={(e) => e.stopPropagation()}>
-                    
-                    {/* Drawer Header - Shows different content based on form state */}
-                    <div className="drawer-head">
-                      {showForm ? (
-                        <>
-                          <button className="drawer-back" onClick={closeAddressForm}>
-                            <FiArrowLeft />
-                          </button>
-                          <h3>{editingAddress ? "Edit Address" : "Add New Address"}</h3>
-                          <button className="drawer-close" onClick={() => {
-                            closeAddressForm();
-                            setShowAddressDrawer(false);
-                          }}>
-                            <FiX />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <h3>Select Address</h3>
-                          <button className="drawer-close" onClick={() => setShowAddressDrawer(false)}>
-                            <FiX />
-                          </button>
-                        </>
-                      )}
-                    </div>
-
-                    {showForm ? (
-                      /* ==========================================
-                         ADDRESS FORM INSIDE DRAWER
-                         ========================================== */
-                      <div className="drawer-address-form">
-                        <div className="form-grid">
-                          <div className="form-field full">
-                            <input
-                              name="full_name"
-                              value={formData.full_name}
-                              placeholder=" "
-                              onChange={handleChange}
-                              className="floating-input"
-                            />
-                            <label className="floating-label">Full Name</label>
-                            <FiUser className="field-icon" />
-                          </div>
-                          
-                          <div className="form-field full">
-                            <input
-                              name="phone_number"
-                              value={formData.phone_number}
-                              placeholder=" "
-                              onChange={handleChange}
-                              className="floating-input"
-                            />
-                            <label className="floating-label">Phone Number</label>
-                            <FiPhone className="field-icon" />
-                          </div>
-                          
-                          <div className="form-field full">
-                            <input
-                              name="address_line"
-                              value={formData.address_line}
-                              placeholder=" "
-                              onChange={handleChange}
-                              className="floating-input"
-                            />
-                            <label className="floating-label">Address Line</label>
-                          </div>
-                          
-                          <div className="form-field">
-                            <input
-                              name="city"
-                              value={formData.city}
-                              placeholder=" "
-                              onChange={handleChange}
-                              className="floating-input"
-                            />
-                            <label className="floating-label">City</label>
-                          </div>
-                          
-                          <div className="form-field">
-                            <input
-                              name="state"
-                              value={formData.state}
-                              placeholder=" "
-                              onChange={handleChange}
-                              className="floating-input"
-                            />
-                            <label className="floating-label">State</label>
-                          </div>
-                          
-                          <div className="form-field">
-                            <input
-                              name="pincode"
-                              value={formData.pincode}
-                              placeholder=" "
-                              onChange={handleChange}
-                              className="floating-input"
-                            />
-                            <label className="floating-label">Pincode</label>
-                          </div>
-                          
-                          <div className="form-field">
-                            <select
-                              name="address_type"
-                              value={formData.address_type}
-                              onChange={handleChange}
-                              className="floating-select"
-                            >
-                              <option value="Home">Home</option>
-                              <option value="Work">Work</option>
-                              <option value="Other">Other</option>
-                            </select>
-                            <label className="floating-label">Address Type</label>
-                          </div>
-                        </div>
-                        
-                        <div className="form-footer">
-                          <label className="checkbox">
-                            <input
-                              type="checkbox"
-                              name="is_default"
-                              checked={formData.is_default}
-                              onChange={handleChange}
-                            />
-                            <span className="checkmark"></span>
-                            Set as default
-                          </label>
-                          <div className="form-actions">
-                            <button className="btn-cancel" onClick={closeAddressForm}>
-                              Cancel
-                            </button>
-                            <button className="btn-save" onClick={saveAddress}>
-                              {editingAddress ? "Update" : "Save"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* ==========================================
-                         ADDRESS LIST INSIDE DRAWER
-                         ========================================== */
-                      <>
-                        <div className="drawer-search">
-                          <FiSearch />
-                          <input
-                            type="text"
-                            placeholder="Search addresses..."
-                            value={searchAddress}
-                            onChange={(e) => setSearchAddress(e.target.value)}
-                          />
-                        </div>
-
-                        <div className="drawer-list">
-                          {filteredAddresses.map((address) => (
-                            <div
-                              key={address.address_id}
-                              className={`drawer-item ${selectedAddress === address.address_id ? "selected" : ""}`}
-                              onClick={() => {
-                                setSelectedAddress(address.address_id);
-                                setShowAddressDrawer(false);
-                              }}
-                            >
-                              <div className="drawer-radio">
-                                {selectedAddress === address.address_id ? (
-                                  <div className="radio-checked"><FiCheck /></div>
-                                ) : (
-                                  <div className="radio-empty" />
-                                )}
-                              </div>
-                              <div className="drawer-info">
-                                <div className="drawer-name">
-                                  {address.full_name}
-                                  <span className="drawer-phone">{address.phone_number}</span>
-                                </div>
-                                <p className="drawer-address">
-                                  {address.address_line}, {address.city}, {address.state} - {address.pincode}
-                                </p>
-                                <div className="drawer-tags">
-                                  {address.is_default && <span className="tag-default">Default</span>}
-                                  <span className={`tag-type ${address.address_type.toLowerCase()}`}>
-                                    {address.address_type}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="drawer-actions">
-                                <button className="drawer-edit" onClick={(e) => { e.stopPropagation(); editAddress(address); }}>
-                                  <FiEdit2 />
-                                </button>
-                                <button className="drawer-delete" onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(address.address_id); }}>
-                                  <FiTrash2 />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Add New Address Button inside Drawer */}
-                        <button
-                          className="drawer-add"
-                          onClick={openAddAddressForm}
-                        >
-                          <FiPlus /> Add New Address
-                        </button>
-                      </>
-                    )}
+                    <button 
+                      className="change-address-btn"
+                      onClick={() => setShowAddressDrawer(true)}
+                    >
+                      Change Address
+                    </button>
                   </div>
-                </div>
-              )}
-
-              {/* Delete Confirmation */}
-              {showDeleteConfirm && (
-                <div className="modal-overlay">
-                  <div className="modal-box">
-                    <div className="modal-icon"><FiTrash2 /></div>
-                    <h3>Delete Address?</h3>
-                    <p>This action cannot be undone.</p>
-                    <div className="modal-actions">
-                      <button className="btn-cancel" onClick={() => setShowDeleteConfirm(null)}>Cancel</button>
-                      <button className="btn-delete" onClick={() => deleteAddress(showDeleteConfirm)}>Delete</button>
-                    </div>
+                ))
+              ) : (
+                /* ==========================================
+                   EMPTY STATE - NO ADDRESS
+                   ========================================== */
+                <div className="empty-address-state">
+                  <div className="empty-icon-wrapper">
+                    <FiMapPin className="empty-icon" />
                   </div>
+                  <h3 className="empty-title">No Delivery Address</h3>
+                  <p className="empty-description">
+                    Please add your delivery address before placing your order.
+                  </p>
+                  <button 
+                    className="add-address-primary"
+                    onClick={() => {
+                      setShowAddressDrawer(true);
+                      // Open form directly when no addresses exist
+                      setTimeout(() => openAddAddressForm(), 100);
+                    }}
+                  >
+                    <FiPlus /> Add Address
+                  </button>
                 </div>
               )}
             </div>
 
             {/* PAYMENT METHOD */}
-            <div className="checkout-card">
+            <div className="checkout-card payment-card">
               <div className="card-header">
-                <h2 className="section-title">Payment Method</h2>
+                <div className="header-left">
+                  <FiCreditCard className="header-icon" />
+                  <h2 className="section-title">Payment Method</h2>
+                </div>
               </div>
 
-              <div className="payment-list">
-                <label className={`payment-item ${paymentMethod === "COD" ? "active" : ""}`}>
+              <div className="payment-methods-grid">
+                <label className={`payment-method ${paymentMethod === "COD" ? "active" : ""}`}>
                   <input
                     type="radio"
                     value="COD"
                     checked={paymentMethod === "COD"}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                   />
-                  <div className="payment-content">
-                    <FaMoneyBillWave className="payment-icon" />
-                    <div>
+                  <div className="payment-method-content">
+                    <div className="payment-method-icon">
+                      <FaMoneyBillWave />
+                    </div>
+                    <div className="payment-method-info">
                       <h4>Cash on Delivery</h4>
                       <p>Pay when you receive</p>
                     </div>
-                    {paymentMethod === "COD" && <FiCheck className="payment-check" />}
+                    {paymentMethod === "COD" && <FiCheck className="payment-method-check" />}
                   </div>
                 </label>
 
-                <label className={`payment-item ${paymentMethod === "RAZORPAY" ? "active" : ""}`}>
+                <label className={`payment-method ${paymentMethod === "RAZORPAY" ? "active" : ""}`}>
                   <input
                     type="radio"
                     value="RAZORPAY"
                     checked={paymentMethod === "RAZORPAY"}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                   />
-                  <div className="payment-content">
-                    <FiCreditCard className="payment-icon" />
-                    <div>
-                      <h4>Online Payment</h4>
-                      <p>Card, UPI, Netbanking</p>
+                  <div className="payment-method-content">
+                    <div className="payment-method-icon">
+                      <FiCreditCard />
                     </div>
-                    {paymentMethod === "RAZORPAY" && <FiCheck className="payment-check" />}
+                    <div className="payment-method-info">
+                      <h4>Card / UPI</h4>
+                      <p>Credit, Debit, UPI, Netbanking</p>
+                    </div>
+                    {paymentMethod === "RAZORPAY" && <FiCheck className="payment-method-check" />}
                   </div>
                 </label>
 
-                <label className={`payment-item ${paymentMethod === "UPI" ? "active" : ""}`}>
+                <label className={`payment-method ${paymentMethod === "UPI" ? "active" : ""}`}>
                   <input
                     type="radio"
                     value="UPI"
                     checked={paymentMethod === "UPI"}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                   />
-                  <div className="payment-content">
-                    <FaQrcode className="payment-icon" />
-                    <div>
+                  <div className="payment-method-content">
+                    <div className="payment-method-icon">
+                      <FaQrcode />
+                    </div>
+                    <div className="payment-method-info">
                       <h4>UPI</h4>
                       <p>Google Pay, PhonePe, Paytm</p>
                     </div>
-                    {paymentMethod === "UPI" && <FiCheck className="payment-check" />}
+                    {paymentMethod === "UPI" && <FiCheck className="payment-method-check" />}
                   </div>
                 </label>
               </div>
@@ -764,12 +603,12 @@ function Checkout() {
                       className={`toggle-btn ${isMobile ? "active" : ""}`}
                       onClick={() => setShowQRCode(false)}
                     >
-                      <FiCreditCard /> Apps
+                      <FiSmartphone /> Apps
                     </button>
                   </div>
 
                   {showQRCode ? (
-                    <div className="qr-box">
+                    <div className="qr-container">
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=clayware@upi&pn=ClayWare&am=${finalAmount}&cu=INR`}
                         alt="UPI QR Code"
@@ -778,10 +617,10 @@ function Checkout() {
                           e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=clayware@upi&pn=ClayWare&am=${finalAmount}`;
                         }}
                       />
-                      <div className="qr-info">
+                      <div className="qr-details">
                         <p className="qr-amount">₹{finalAmount}</p>
                         <p className="qr-merchant">ClayWare</p>
-                        <p className="qr-upi">clayware@upi</p>
+                        <p className="qr-upi-id">clayware@upi</p>
                         <p className="qr-hint">Scan with any UPI app</p>
                       </div>
                     </div>
@@ -812,13 +651,16 @@ function Checkout() {
                 </div>
               )}
 
-              <div className="payment-brands">
-                <span>Secure Payments:</span>
-                <SiVisa />
-                <SiMastercard />
-                <SiGooglepay />
-                <SiPaytm />
-                <SiPhonepe />
+              <div className="secure-payment-badges">
+                <FiLock className="secure-badge-icon" />
+                <span>100% Secure Payments</span>
+                <div className="payment-icons">
+                  <SiVisa />
+                  <SiMastercard />
+                  <SiGooglepay />
+                  <SiPaytm />
+                  <SiPhonepe />
+                </div>
               </div>
             </div>
           </div>
@@ -848,31 +690,34 @@ function Checkout() {
               </div>
 
               {/* Price Details */}
-              <div className="price-details">
+              <div className="price-breakdown">
                 <div className="price-row">
                   <span className="price-label">Items ({cart.total_items})</span>
                   <span className="price-value">₹{cart.total_original_price}</span>
                 </div>
-                <div className="price-row discount">
-                  <span className="price-label">Discount</span>
-                  <span className="discount-amount">-₹{cart.total_savings}</span>
-                </div>
+                {cart.total_savings > 0 && (
+                  <div className="price-row discount">
+                    <span className="price-label">Discount</span>
+                    <span className="discount-amount">-₹{cart.total_savings}</span>
+                  </div>
+                )}
                 <div className="price-row">
                   <span className="price-label">Delivery</span>
-                  <span className="free-delivery">FREE</span>
+                  <span className="delivery-free">FREE</span>
                 </div>
+                <div className="price-divider"></div>
               </div>
 
               {/* Savings Badge */}
               {cart.total_savings > 0 && (
                 <div className="savings-badge">
                   <FiGift className="savings-icon" />
-                  <span>You saved ₹{cart.total_savings}</span>
+                  <span>You saved ₹{cart.total_savings} on this order</span>
                 </div>
               )}
 
               {/* Total */}
-              <div className="price-total">
+              <div className="total-section">
                 <span className="total-label">Total</span>
                 <span className="total-amount">₹{finalAmount}</span>
               </div>
@@ -881,16 +726,16 @@ function Checkout() {
               <div className="delivery-info">
                 <FiClock className="delivery-icon" />
                 <div>
-                  <p className="delivery-label">Delivery by</p>
+                  <p className="delivery-label">Estimated Delivery</p>
                   <p className="delivery-date">15 July, 2025</p>
-                  <span className="delivery-free">Free Delivery</span>
+                  <span className="delivery-free-badge">Free Delivery</span>
                 </div>
               </div>
 
               {/* Secure Payment Footer */}
               <div className="secure-footer">
                 <FiLock className="secure-icon" />
-                <span>100% Secure Payments powered by Razorpay</span>
+                <span>Secure payments powered by Razorpay</span>
               </div>
 
               {/* Place Order Button */}
@@ -905,7 +750,10 @@ function Checkout() {
                     Processing...
                   </>
                 ) : (
-                  `Pay ₹${finalAmount}`
+                  <>
+                    <span>Place Order</span>
+                    <span className="btn-amount">₹{finalAmount}</span>
+                  </>
                 )}
               </button>
             </div>
@@ -913,13 +761,310 @@ function Checkout() {
         </div>
       </div>
 
-      {/* Payment Overlay */}
+      {/* =========================
+          ADDRESS DRAWER
+      ========================== */}
+      {showAddressDrawer && (
+        <div className="drawer-overlay" onClick={() => {
+          if (!showForm) {
+            setShowAddressDrawer(false);
+          }
+        }}>
+          <div className={`drawer ${isMobile ? 'bottom' : 'side'}`} onClick={(e) => e.stopPropagation()}>
+            
+            {/* Drawer Header */}
+            <div className="drawer-header">
+              {showForm ? (
+                <>
+                  <button className="drawer-back-btn" onClick={closeAddressForm}>
+                    <FiArrowLeft />
+                  </button>
+                  <h3 className="drawer-title">{editingAddress ? "Edit Address" : "Add New Address"}</h3>
+                  <button className="drawer-close-btn" onClick={() => {
+                    closeAddressForm();
+                    setShowAddressDrawer(false);
+                  }}>
+                    <IoMdClose />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="drawer-title">Select Delivery Address</h3>
+                  <button className="drawer-close-btn" onClick={() => setShowAddressDrawer(false)}>
+                    <IoMdClose />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {showForm ? (
+              /* ==========================================
+                 ADDRESS FORM INSIDE DRAWER
+                 ========================================== */
+              <div className="drawer-body form-body">
+                <div className="address-form">
+                  <div className="form-group">
+                    <div className="form-field">
+                      <input
+                        name="full_name"
+                        value={formData.full_name}
+                        placeholder=" "
+                        onChange={handleChange}
+                        className="floating-input"
+                        id="full_name"
+                      />
+                      <label htmlFor="full_name" className="floating-label">Full Name</label>
+                      <FiUser className="field-icon" />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <div className="form-field">
+                      <input
+                        name="phone_number"
+                        value={formData.phone_number}
+                        placeholder=" "
+                        onChange={handleChange}
+                        className="floating-input"
+                        id="phone_number"
+                      />
+                      <label htmlFor="phone_number" className="floating-label">Phone Number</label>
+                      <FiPhone className="field-icon" />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <div className="form-field">
+                      <input
+                        name="address_line"
+                        value={formData.address_line}
+                        placeholder=" "
+                        onChange={handleChange}
+                        className="floating-input"
+                        id="address_line"
+                      />
+                      <label htmlFor="address_line" className="floating-label">Address Line</label>
+                    </div>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <div className="form-field">
+                        <input
+                          name="city"
+                          value={formData.city}
+                          placeholder=" "
+                          onChange={handleChange}
+                          className="floating-input"
+                          id="city"
+                        />
+                        <label htmlFor="city" className="floating-label">City</label>
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <div className="form-field">
+                        <input
+                          name="state"
+                          value={formData.state}
+                          placeholder=" "
+                          onChange={handleChange}
+                          className="floating-input"
+                          id="state"
+                        />
+                        <label htmlFor="state" className="floating-label">State</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <div className="form-field">
+                        <input
+                          name="pincode"
+                          value={formData.pincode}
+                          placeholder=" "
+                          onChange={handleChange}
+                          className="floating-input"
+                          id="pincode"
+                        />
+                        <label htmlFor="pincode" className="floating-label">Pincode</label>
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <div className="form-field">
+                        <select
+                          name="address_type"
+                          value={formData.address_type}
+                          onChange={handleChange}
+                          className="floating-select"
+                          id="address_type"
+                        >
+                          <option value="Home">Home</option>
+                          <option value="Work">Work</option>
+                          <option value="Other">Other</option>
+                        </select>
+                        <label htmlFor="address_type" className="floating-label">Address Type</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="form-actions-row">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="is_default"
+                        checked={formData.is_default}
+                        onChange={handleChange}
+                      />
+                      <span className="checkbox-custom"></span>
+                      Set as default address
+                    </label>
+                  </div>
+                  
+                  <div className="form-actions">
+                    <button className="btn-secondary" onClick={closeAddressForm}>
+                      Cancel
+                    </button>
+                    <button className="btn-primary" onClick={saveAddress}>
+                      {editingAddress ? "Update Address" : "Save Address"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* ==========================================
+                 ADDRESS LIST INSIDE DRAWER
+                 ========================================== */
+              <>
+                <div className="drawer-search">
+                  <FiSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search saved addresses..."
+                    value={searchAddress}
+                    onChange={(e) => setSearchAddress(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
+
+                <div className="drawer-body">
+                  {filteredAddresses.length > 0 ? (
+                    <div className="address-list">
+                      {filteredAddresses.map((address) => (
+                        <div
+                          key={address.address_id}
+                          className={`address-item ${selectedAddress === address.address_id ? "selected" : ""}`}
+                          onClick={() => {
+                            setSelectedAddress(address.address_id);
+                            setShowAddressDrawer(false);
+                          }}
+                        >
+                          <div className="address-radio">
+                            {selectedAddress === address.address_id ? (
+                              <div className="radio-selected"><FiCheck /></div>
+                            ) : (
+                              <div className="radio-empty" />
+                            )}
+                          </div>
+                          <div className="address-content">
+                            <div className="address-name-phone">
+                              <span className="addr-name">{address.full_name}</span>
+                              <span className="addr-phone">{address.phone_number}</span>
+                            </div>
+                            <p className="addr-full">
+                              {address.address_line}, {address.city}, {address.state} - {address.pincode}
+                            </p>
+                            <div className="addr-tags">
+                              {address.is_default && <span className="tag-default">Default</span>}
+                              <span className={`tag-type ${address.address_type.toLowerCase()}`}>
+                                {getAddressIcon(address.address_type)}
+                                {address.address_type}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="address-actions">
+                            <button 
+                              className="action-btn edit"
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                editAddress(address);
+                              }}
+                              aria-label="Edit address"
+                            >
+                              <FiEdit2 />
+                            </button>
+                            <button 
+                              className="action-btn delete"
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setShowDeleteConfirm(address.address_id);
+                              }}
+                              aria-label="Delete address"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="no-addresses-message">
+                      <p>No addresses found</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="drawer-footer">
+                  <button
+                    className="add-address-btn"
+                    onClick={openAddAddressForm}
+                  >
+                    <FiPlus /> Add New Address
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon-wrapper">
+              <FiTrash2 className="modal-icon" />
+            </div>
+            <h3 className="modal-title">Delete Address?</h3>
+            <p className="modal-description">This action cannot be undone. Are you sure you want to delete this address?</p>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowDeleteConfirm(null)}>
+                Cancel
+              </button>
+              <button className="btn-danger" onClick={() => deleteAddress(showDeleteConfirm)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Processing Overlay */}
       {showOverlay && (
         <div className="payment-overlay">
           <div className="payment-overlay-content">
-            <div className="loader-spinner"></div>
-            <h3>{loadingText}</h3>
-            <p>Please don't refresh or close this page</p>
+            <div className="payment-loader">
+              <div className="loader-ring"></div>
+            </div>
+            <h3 className="payment-status">{loadingText}</h3>
+            <p className="payment-hint">Please don't refresh or close this page</p>
+            <div className="payment-progress">
+              <div className="progress-bar">
+                <div className="progress-fill"></div>
+              </div>
+            </div>
           </div>
         </div>
       )}

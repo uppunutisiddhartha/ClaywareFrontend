@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import {
   FiCheckCircle,
@@ -19,714 +19,293 @@ import {
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 import api from "../api/axios";
 
 import "./styles/OrderSuccess.css";
 
-
 function OrderSuccess() {
 
-  const location = useLocation();
+  const { orderId } = useParams();
 
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [order,setOrder] = useState(null);
+  useEffect(() => {
 
-  const [loading,setLoading] = useState(true);
+    const fetchOrder = async () => {
 
-  const [error,setError] = useState(null);
+      try {
 
-
-
-  useEffect(()=>{
-
-
-    const fetchOrder = async()=>{
-
-
-      try{
-
-
-        const orderId = location.state?.orderId;
-
-
-
-        if(!orderId){
-
-          setError(
-            "Order details not found."
-          );
-
+        if (!orderId) {
+          setError("Order ID not found.");
           setLoading(false);
-
           return;
-
         }
 
-
-
         const response = await api.get(
-          `order/success/${orderId}/`
+          `/order/success/${orderId}/`
         );
 
+        console.log(response.data);
 
+        if (response.data.success) {
+          setOrder(response.data.order);
+        } else {
+          setError(response.data.message);
+        }
 
-        setOrder(
-          response.data.order
-        );
-
-
-
-      }
-      catch(err){
-
+      } catch (err) {
 
         console.log(err);
 
+        setError("Unable to load order.");
 
-        setError(
-          "Unable to load order details."
-        );
-
-
-      }
-      finally{
+      } finally {
 
         setLoading(false);
 
       }
 
-
     };
-
-
 
     fetchOrder();
 
-
-
-  },[location]);
-
+  }, [orderId]);
 
 
 
-
-  if(loading){
-
-    return(
-
+  if (loading) {
+    return (
       <>
+        <Navbar />
 
-      <Navbar/>
+        <div className="order-success-page">
+          <h2>Loading Order...</h2>
+        </div>
 
-
-      <div className="order-success-page">
-
-        <h2>
-          Loading order details...
-        </h2>
-
-      </div>
-
-
-      <Footer/>
-
-
+        <Footer />
       </>
-
     );
-
   }
 
 
 
-
-
-  if(error || !order){
-
-    return(
-
+  if (error) {
+    return (
       <>
+        <Navbar />
 
-      <Navbar/>
+        <div className="order-success-page">
+          <h2>{error}</h2>
 
+          <Link to="/shop">
+            Continue Shopping
+          </Link>
+        </div>
 
-      <div className="order-success-page">
-
-
-        <h2>
-          {error}
-        </h2>
-
-
-        <Link to="/shop">
-          Continue Shopping
-        </Link>
-
-
-      </div>
-
-
-      <Footer/>
-
-
+        <Footer />
       </>
-
     );
-
   }
-
-
 
 
 
   return (
-
     <>
 
+      <Navbar />
 
-    <Navbar/>
+      <div className="order-success-page">
 
+        <section className="success-hero">
 
-    <div className="order-success-page">
+          <div className="success-circle">
+            <FiCheckCircle />
+          </div>
 
-
-
-      {/* HERO */}
-
-
-      <section className="success-hero">
-
-
-        <div className="success-circle">
-
-          <FiCheckCircle/>
-
-        </div>
-
-
-
-        <h1>
-
-          Order Placed Successfully!
-
-        </h1>
-
-
-
-        <p>
-
-          Thank you for shopping with
-
-          <strong>
-            ClayWare.
-          </strong>
-
-
-          <br/>
-
-
-          Your handcrafted products are now
-          being prepared with care.
-
-
-        </p>
-
-
-
-
-        <div className="order-id-card">
-
-
-          <span>
-            Order ID
-          </span>
-
-
-
-          <h2>
-            #CW{order.id}
-          </h2>
-
-
-        </div>
-
-
-      </section>
-
-
-
-
-
-
-      {/* DETAILS */}
-
-
-
-      <section className="order-info-grid">
-
-
-
-        <div className="info-card">
-
-          <FiCalendar/>
-
-          <h4>
-            Order Date
-          </h4>
-
+          <h1>Order Placed Successfully!</h1>
 
           <p>
-
-          {
-            new Date(order.date)
-            .toLocaleDateString(
-              "en-IN"
-            )
-          }
-
+            Thank you for shopping with
+            <strong> ClayWare</strong>.
           </p>
 
+          <div className="order-id-card">
+            <span>Order ID</span>
+            <h2>#CW{order.id}</h2>
+          </div>
 
-        </div>
+        </section>
 
 
 
+        <section className="order-info-grid">
 
+          <div className="info-card">
+            <FiCalendar />
+            <h4>Order Date</h4>
+            <p>
+              {new Date(order.date).toLocaleDateString("en-IN")}
+            </p>
+          </div>
 
-        <div className="info-card">
-
-
-          <FiMapPin/>
-
-
-          <h4>
-            Shipping Address
-          </h4>
-
-
-          <p>
-
-          {order.address?.city},
-
-          <br/>
-
-          {order.address?.state}
-
-          <br/>
-
-          {order.address?.pincode}
-
-
-          </p>
-
-
-        </div>
-
-
-
-
-
-        <div className="info-card">
-
-
-          <FiCreditCard/>
-
-
-          <h4>
-            Payment
-          </h4>
-
-
-          <p>
-
-          {
-            order.payment_method
-          }
-
-          </p>
-
-
-        </div>
-
-
-
-
-
-
-        <div className="info-card">
-
-
-          <FiPackage/>
-
-
-          <h4>
-            Total Paid
-          </h4>
-
-
-          <p>
-
-          ₹{order.total_price}
-
-
-          </p>
-
-
-        </div>
-
-
-
-      </section>
-
-
-
-
-
-
-
-
-      {/* TIMELINE */}
-
-
-
-      <section className="timeline-section">
-
-
-        <h2>
-          Order Journey
-        </h2>
-
-
-
-        <div className="timeline">
-
-
-
-          <div className="timeline-item active">
-
-
-            <div className="timeline-icon">
-
-              <FiCheckCircle/>
-
-            </div>
-
-
-            <h4>
-              Confirmed
-            </h4>
-
+          <div className="info-card">
+            <FiMapPin />
+            <h4>Shipping Address</h4>
 
             <p>
-              Order received
+              {order.address.city}
+              <br />
+              {order.address.state}
+              <br />
+              {order.address.pincode}
             </p>
-
 
           </div>
 
+          <div className="info-card">
+            <FiCreditCard />
+            <h4>Payment</h4>
+            <p>{order.payment_method}</p>
+          </div>
+
+          <div className="info-card">
+            <FiPackage />
+            <h4>Total Paid</h4>
+            <p>₹{order.total_price}</p>
+          </div>
+
+        </section>
 
 
 
+        <section className="timeline-section">
 
-          <div className="timeline-line"/>
+          <h2>Order Journey</h2>
 
+          <div className="timeline">
 
+            <div className="timeline-item active">
+              <div className="timeline-icon">
+                <FiCheckCircle />
+              </div>
 
-
-          <div className="timeline-item">
-
-
-            <div className="timeline-icon">
-
-              🏺
-
+              <h4>Confirmed</h4>
+              <p>Order received</p>
             </div>
 
+            <div className="timeline-line"></div>
 
-            <h4>
-              Preparing
-            </h4>
+            <div className="timeline-item">
+              <div className="timeline-icon">🏺</div>
 
+              <h4>Preparing</h4>
+              <p>Handmade with care</p>
+            </div>
 
-            <p>
-              Handmade with care
-            </p>
+            <div className="timeline-line"></div>
 
+            <div className="timeline-item">
+              <div className="timeline-icon">
+                <FiTruck />
+              </div>
+
+              <h4>Shipped</h4>
+              <p>On the way</p>
+            </div>
+
+            <div className="timeline-line"></div>
+
+            <div className="timeline-item">
+              <div className="timeline-icon">
+                <FiHome />
+              </div>
+
+              <h4>Delivered</h4>
+              <p>Enjoy!</p>
+            </div>
 
           </div>
 
+        </section>
 
 
 
+        <section className="delivery-box">
 
-          <div className="timeline-line"/>
+          <FiGift />
 
+          <div>
 
-
-
-          <div className="timeline-item">
-
-
-            <div className="timeline-icon">
-
-              <FiTruck/>
-
-            </div>
-
-
-            <h4>
-              Shipped
-            </h4>
-
+            <h3>Estimated Delivery : 3 - 5 Days</h3>
 
             <p>
-              On the way
+              We will notify you through SMS and Email once your order is shipped.
             </p>
-
 
           </div>
 
+        </section>
 
 
 
+        <section className="features-grid">
 
-          <div className="timeline-line"/>
-
-
-
-
-          <div className="timeline-item">
-
-
-            <div className="timeline-icon">
-
-              <FiHome/>
-
-            </div>
-
-
-            <h4>
-              Delivered
-            </h4>
-
-
-            <p>
-              Enjoy!
-            </p>
-
-
+          <div className="feature-card">
+            <FiShield />
+            <h4>Secure Checkout</h4>
+            <p>Protected Payment</p>
           </div>
 
-
-
-        </div>
-
-
-      </section>
-
-
-
-
-
-
-
-      {/* DELIVERY */}
-
-
-
-      <section className="delivery-box">
-
-
-        <FiGift/>
-
-
-
-        <div>
-
-
-          <h3>
-
-            Estimated Delivery : 3 - 5 Days
-
-          </h3>
-
-
-
-          <p>
-
-            We will notify you by SMS &
-            Email once your package is shipped.
-
-
-          </p>
-
-
-        </div>
-
-
-
-      </section>
-
-
-
-
-
-
-
-      {/* FEATURES */}
-
-
-
-      <section className="features-grid">
-
-
-
-        <div className="feature-card">
-
-          <FiShield/>
-
-          <h4>
-            Secure Checkout
-          </h4>
-
-          <p>
-            Protected payment &
-            encrypted transactions.
-          </p>
-
-
-        </div>
-
-
-
-
-        <div className="feature-card">
-
-          <FiTruck/>
-
-          <h4>
-            Fast Delivery
-          </h4>
-
-          <p>
-            Carefully packed &
-            delivered safely.
-          </p>
-
-
-        </div>
-
-
-
-
-
-        <div className="feature-card">
-
-
-          <FiRefreshCw/>
-
-
-          <h4>
-            Easy Returns
-          </h4>
-
-
-          <p>
-            Hassle-free replacement.
-          </p>
-
-
-        </div>
-
-
-
-
-
-        <div className="feature-card">
-
-
-          <FiHeadphones/>
-
-
-          <h4>
-            Support
-          </h4>
-
-
-          <p>
-            Our team is always
-            available to help.
-          </p>
-
-
-        </div>
-
-
-
-      </section>
-
-
-
-
-
-
-      {/* BUTTONS */}
-
-
-
-      <section className="success-buttons">
-
-
-
-        <Link
-          to="/shop"
-          className="continue-btn"
-        >
-
-          <FiShoppingBag/>
-
-          Continue Shopping
-
-
-        </Link>
-
-
-
-
-        <Link
-          to="/orders"
-          className="track-btn"
-        >
-
-          Track Order
-
-          <FiArrowRight/>
-
-
-        </Link>
-
-
-
-      </section>
-
-
-
-
-
-    </div>
-
-
-
-    <Footer/>
-
+          <div className="feature-card">
+            <FiTruck />
+            <h4>Fast Delivery</h4>
+            <p>Safe Packaging</p>
+          </div>
+
+          <div className="feature-card">
+            <FiRefreshCw />
+            <h4>Easy Returns</h4>
+            <p>Simple Return Policy</p>
+          </div>
+
+          <div className="feature-card">
+            <FiHeadphones />
+            <h4>Support</h4>
+            <p>24×7 Customer Support</p>
+          </div>
+
+        </section>
+
+
+
+        <section className="success-buttons">
+
+          <Link
+            to="/shop"
+            className="continue-btn"
+          >
+            <FiShoppingBag />
+            Continue Shopping
+          </Link>
+
+          <Link
+            to="/orders"
+            className="track-btn"
+          >
+            Track Order
+            <FiArrowRight />
+          </Link>
+
+        </section>
+
+      </div>
+
+      <Footer />
 
     </>
-
   );
-
 }
-
-
 
 export default OrderSuccess;
