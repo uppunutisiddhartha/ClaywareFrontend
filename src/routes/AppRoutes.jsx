@@ -59,10 +59,6 @@ function AppRoutes() {
         }
       />
 
-      <Route
-  path="/order-success"
-  element={<OrderSuccess />}
-/>
 
       <Route path="/register" element={<UserRegister />} />
       {/* <Route path="/seller-register" element={<SellerRegister />} />

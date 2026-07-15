@@ -1,37 +1,70 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { loginUser } from "../services/authService";
-
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-import "./styles/login.css";
+import {
+    loginUser,
+    checkPhone,
+    sendOTP,
+    verifyOTP,
+} from "../services/authService";
 
+import "./styles/login.css";
 
 function Login() {
 
     const navigate = useNavigate();
 
+    // ============================================
+    // UI STATE
+    // ============================================
 
-    const [email, setEmail] = useState("");
+    const [authorizedLogin, setAuthorizedLogin] = useState(false);
+
+    // Customer Login Method
+    // otp | password
+
+    const [loginMethod, setLoginMethod] = useState("otp");
+
+    // ============================================
+    // CUSTOMER
+    // ============================================
+
+    const [customerIdentifier, setCustomerIdentifier] = useState("");
+
+    const [customerPassword, setCustomerPassword] = useState("");
+
+    const [otp, setOtp] = useState("");
+
+    const [otpSent, setOtpSent] = useState(false);
+
+    // ============================================
+    // AUTHORIZED LOGIN
+    // ============================================
+
+    const [identifier, setIdentifier] = useState("");
 
     const [password, setPassword] = useState("");
 
-    const [error, setError] = useState("");
+    // ============================================
+    // COMMON
+    // ============================================
 
     const [loading, setLoading] = useState(false);
 
+    const [error, setError] = useState("");
 
-
-    // Redirect already logged-in users
+    // ============================================
+    // AUTO LOGIN
+    // ============================================
 
     useEffect(() => {
 
         const token = localStorage.getItem("token");
 
         const role = localStorage.getItem("role");
-
 
         if (token && role) {
 
@@ -41,150 +74,92 @@ function Login() {
 
     }, []);
 
-
+    // ============================================
+    // REDIRECT
+    // ============================================
 
     const redirectUser = (role) => {
 
-
-        switch(role){
-
+        switch (role) {
 
             case "user":
-
-                navigate("/shop", {replace:true});
-
+                navigate("/shop", { replace: true });
                 break;
-
 
             case "seller":
-
-                navigate("/seller-dashboard", {replace:true});
-
+                navigate("/seller-dashboard", { replace: true });
                 break;
-
 
             case "delivery_partner":
-
-                navigate("/delivery-dashboard", {replace:true});
-
+                navigate("/delivery-dashboard", { replace: true });
                 break;
 
+            case "marketing":
+                navigate("/marketing-dashboard", { replace: true });
+                break;
 
             case "admin":
-
-                navigate("/admin-dashboard", {replace:true});
-
+                navigate("/admin-dashboard", { replace: true });
                 break;
 
-
             default:
-
                 navigate("/");
-
         }
-
-
     };
 
+    // ============================================
+    // SAVE LOGIN
+    // ============================================
 
+    const saveLogin = (response) => {
 
+        localStorage.setItem("token", response.token);
 
+        localStorage.setItem("role", response.role);
 
-    const handleSubmit = async (e)=>{
+        localStorage.setItem("email", response.email || "");
 
+        localStorage.setItem(
+            "phone_number",
+            response.phone_number || ""
+        );
+
+        redirectUser(response.role);
+    };
+        // ============================================
+    // CUSTOMER PASSWORD LOGIN
+    // ============================================
+
+    const handleCustomerLogin = async (e) => {
 
         e.preventDefault();
 
-
+        setLoading(true);
         setError("");
 
-        setLoading(true);
-
-
-
-        try{
-
+        try {
 
             const response = await loginUser({
 
-                email,
+                identifier: customerIdentifier,
 
-                password
+                password: customerPassword,
 
             });
 
+            if (response.role !== "user") {
 
+                setError("Please use Authorized Login.");
 
-            console.log(
-                "Login Success:",
-                response
-            );
-
-
-
-            /*
-              Adjust according to your API response
-
-              Example:
-
-              {
-                token:"",
-                role:"user",
-                email:""
-              }
-
-            */
-
-
-            const token = response.token;
-
-            const role = response.role;
-
-
-
-            if(!token){
-
-                throw new Error(
-                    "Token not received"
-                );
+                return;
 
             }
 
-
-
-            localStorage.setItem(
-                "token",
-                token
-            );
-
-
-            localStorage.setItem(
-                "role",
-                role
-            );
-
-
-            localStorage.setItem(
-                "email",
-                response.email || email
-            );
-
-
-
-
-            redirectUser(role);
-
-
+            saveLogin(response);
 
         }
 
-        catch(err){
-
-
-            console.log(
-                err.response?.data
-            );
-
+        catch (err) {
 
             setError(
 
@@ -192,186 +167,426 @@ function Login() {
 
                 err.response?.data?.detail ||
 
-                "Invalid email or password"
+                "Invalid credentials."
 
             );
 
-
         }
 
-        finally{
-
+        finally {
 
             setLoading(false);
 
-
         }
-
 
     };
 
+    // ============================================
+    // SEND OTP
+    // ============================================
 
+    const handleSendOTP = async () => {
 
+        if (!customerIdentifier.trim()) {
 
+            setError("Enter your mobile number.");
 
+            return;
+
+        }
+
+        setLoading(true);
+
+        setError("");
+
+        try {
+
+            await checkPhone({
+
+                phone_number: customerIdentifier,
+
+            });
+
+            await sendOTP({
+
+                phone_number: customerIdentifier,
+
+            });
+
+            setOtpSent(true);
+
+        }
+
+        catch (err) {
+
+            setError(
+
+                err.response?.data?.message ||
+
+                "Unable to send OTP."
+
+            );
+
+        }
+
+        finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    // ============================================
+    // VERIFY OTP
+    // ============================================
+
+    const handleVerifyOTP = async () => {
+
+        if (!otp.trim()) {
+
+            setError("Enter OTP.");
+
+            return;
+
+        }
+
+        setLoading(true);
+
+        setError("");
+
+        try {
+
+            const response = await verifyOTP({
+
+                phone_number: customerIdentifier,
+
+                otp,
+
+            });
+
+            saveLogin(response);
+
+        }
+
+        catch (err) {
+
+            setError(
+
+                err.response?.data?.message ||
+
+                "Invalid OTP."
+
+            );
+
+        }
+
+        finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    // ============================================
+    // AUTHORIZED LOGIN
+    // ============================================
+
+    const handleAuthorizedLogin = async (e) => {
+
+        e.preventDefault();
+
+        setLoading(true);
+
+        setError("");
+
+        try {
+
+            const response = await loginUser({
+
+                identifier,
+
+                password,
+
+            });
+
+            if (response.role === "user") {
+
+                setError("Customers should use Customer Login.");
+
+                return;
+
+            }
+
+            saveLogin(response);
+
+        }
+
+        catch (err) {
+
+            setError(
+
+                err.response?.data?.message ||
+
+                err.response?.data?.detail ||
+
+                "Invalid credentials."
+
+            );
+
+        }
+
+        finally {
+
+            setLoading(false);
+
+        }
+
+    };
     return (
-
-        <>
-
-
+    <>
         <Navbar />
-
 
         <div className="login-page">
 
-
-            <form
-                className="login-card"
-                onSubmit={handleSubmit}
-            >
-
+            <div className="login-card">
 
                 <h2>
-
-                    Welcome Back 👋
-
+                    {authorizedLogin
+                        ? "🔒 Authorized Login"
+                        : "👋 Welcome Back"}
                 </h2>
 
-
                 <p className="login-subtitle">
-
-                    Login to your ClayWare account
-
+                    {authorizedLogin
+                        ? "Seller • Delivery Partner • Marketing • Admin"
+                        : "Login to your ClayWare account"}
                 </p>
 
-
-
-
-                {
-                    error &&
-
+                {error && (
                     <div className="login-error">
-
                         {error}
-
                     </div>
-                }
+                )}
 
+                {/* ==========================
+                    CUSTOMER LOGIN
+                =========================== */}
+                {!authorizedLogin && (
+    <>
 
+        <div className="login-tabs">
 
+            <button
+                type="button"
+                className={loginMethod === "otp" ? "tab-btn active" : "tab-btn"}
+                onClick={() => {
+                    setLoginMethod("otp");
+                    setOtpSent(false);
+                    setOtp("");
+                    setError("");
+                }}
+            >
+                OTP Login
+            </button>
 
-                <div className="input-group">
-
-
-                    <label>Email</label>
-
-
-                    <input
-
-                        type="email"
-
-                        placeholder="Enter your email"
-
-                        value={email}
-
-                        onChange={(e)=>
-                            setEmail(e.target.value)
-                        }
-
-                        required
-
-                    />
-
-
-                </div>
-
-
-
-
-
-                <div className="input-group">
-
-
-                    <label>Password</label>
-
-
-                    <input
-
-                        type="password"
-
-                        placeholder="Enter your password"
-
-                        value={password}
-
-                        onChange={(e)=>
-                            setPassword(e.target.value)
-                        }
-
-                        required
-
-                    />
-
-
-                </div>
-
-
-
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                >
-
-
-                    {
-                        loading
-                        ?
-                        "Logging in..."
-                        :
-                        "Login"
-                    }
-
-
-                </button>
-
-
-
-
-                <p className="register-link">
-
-
-                    Don't have an account?
-
-
-                    <span
-                        onClick={()=>
-                            navigate("/register")
-                        }
-                    >
-
-                        Create Account
-
-                    </span>
-
-
-                </p>
-
-
-
-            </form>
-
+            <button
+                type="button"
+                className={loginMethod === "password" ? "tab-btn active" : "tab-btn"}
+                onClick={() => {
+                    setLoginMethod("password");
+                    setError("");
+                }}
+            >
+                Password Login
+            </button>
 
         </div>
 
+        <div className="input-group">
+
+            <label>Mobile Number</label>
+
+            <input
+                type="text"
+                placeholder="Enter Mobile Number"
+                value={customerIdentifier}
+                onChange={(e) => setCustomerIdentifier(e.target.value)}
+            />
+
+        </div>
+
+        {loginMethod === "password" && (
+
+            <form onSubmit={handleCustomerLogin}>
+
+                <div className="input-group">
+
+                    <label>Password</label>
+
+                    <input
+                        type="password"
+                        placeholder="Enter Password"
+                        value={customerPassword}
+                        onChange={(e) =>
+                            setCustomerPassword(e.target.value)
+                        }
+                    />
+
+                </div>
+
+                <button type="submit" disabled={loading}>
+                    {loading ? "Logging in..." : "Login"}
+                </button>
+
+            </form>
+
+        )}
+
+        {loginMethod === "otp" && (
+
+            <>
+
+                {!otpSent ? (
+
+                    <button
+                        type="button"
+                        className="otp-btn"
+                        onClick={handleSendOTP}
+                    >
+                        {loading ? "Sending OTP..." : "Send OTP"}
+                    </button>
+
+                ) : (
+
+                    <>
+
+                        <div className="input-group">
+
+                            <label>Enter OTP</label>
+
+                            <input
+                                type="text"
+                                placeholder="Enter 6-digit OTP"
+                                value={otp}
+                                onChange={(e) =>
+                                    setOtp(e.target.value)
+                                }
+                            />
+
+                        </div>
+
+                        <button
+                            type="button"
+                            className="otp-btn"
+                            onClick={handleVerifyOTP}
+                        >
+                            {loading ? "Verifying..." : "Verify OTP"}
+                        </button>
+
+                    </>
+
+                )}
+
+            </>
+
+        )}
+
+        <div className="login-divider">
+            <span>Authorized Users</span>
+        </div>
+
+        <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => setAuthorizedLogin(true)}
+        >
+            Seller / Delivery / Marketing / Admin Login
+        </button>
+
+        <p className="register-link">
+            Don't have an account?
+            <span onClick={() => navigate("/register")}>
+                Create Account
+            </span>
+        </p>
+
+    </>
+)}
+
+                                {authorizedLogin && (
+
+                    <form onSubmit={handleAuthorizedLogin}>
+
+                        <button
+                            type="button"
+                            className="back-btn"
+                            onClick={() => {
+
+                                setAuthorizedLogin(false);
+                                setError("");
+
+                            }}
+                        >
+                            ← Back to Customer Login
+                        </button>
+
+                        <div className="input-group">
+
+                            <label>Email or Mobile Number</label>
+
+                            <input
+                                type="text"
+                                placeholder="Email or Mobile Number"
+                                value={identifier}
+                                onChange={(e) =>
+                                    setIdentifier(e.target.value)
+                                }
+                                required
+                            />
+
+                        </div>
+
+                        <div className="input-group">
+
+                            <label>Password</label>
+
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) =>
+                                    setPassword(e.target.value)
+                                }
+                                required
+                            />
+
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                        >
+                            {loading
+                                ? "Logging in..."
+                                : "Login"}
+                        </button>
+
+                    </form>
+
+                )}
+
+            </div>
+
+        </div>
 
         <Footer />
 
-
-        </>
+    </>
 
     );
 
 }
-
 
 export default Login;
