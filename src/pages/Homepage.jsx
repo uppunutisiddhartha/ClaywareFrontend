@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import OfferBanner from "../components/OfferBanner";
 import ProductCard from "../components/ProductCard";
 
-import FeaturedProducts from  "../components/FeaturedProducts";
+
 
 
 import Newsletter from "../components/Newsletter";

@@ -193,14 +193,64 @@ function ProductDetails() {
   const discount = mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
 
   // =====================================
-  // STOCK
+  // STOCK STATUS - IMPROVED LOGIC
   // =====================================
 
   const stock = Number(selectedVariant?.stock_quantity || 0);
   const inStock = stock > 0;
-  let stockMessage = "Out of Stock";
-  if (stock > 10) stockMessage = `${stock} in stock`;
-  else if (stock > 0) stockMessage = `Only ${stock} left`;
+
+  // Stock status types with professional UI
+  const getStockStatus = (stockCount) => {
+    if (stockCount === 0) {
+      return {
+        type: 'out-of-stock',
+        label: 'Out of Stock',
+        message: 'Currently unavailable',
+        action: 'Notify me when available',
+        color: '#D32F2F',
+        icon: '❌',
+        dotColor: '#BDBDBD',
+        bgColor: '#F5F5F5'
+      };
+    } else if (stockCount > 10) {
+      return {
+        type: 'plenty',
+        label: '✅ In Stock',
+        message: 'Ready to ship',
+        action: null,
+        color: '#2E7D32',
+        icon: '✅',
+        dotColor: '#4CAF50',
+        bgColor: '#E8F5E9'
+      };
+    } else if (stockCount >= 5 && stockCount <= 10) {
+      return {
+        type: 'limited',
+        label: '⚠️ Only Few Left',
+        message: 'Hurry! Selling Fast',
+        action: null,
+        color: '#F57C00',
+        icon: '⚠️',
+        dotColor: '#FF9800',
+        bgColor: '#FFF3E0'
+      };
+    } else if (stockCount >= 1 && stockCount <= 4) {
+      return {
+        type: 'very-low',
+        label: `🔥 Only ${stockCount} left in stock`,
+        message: 'Order soon!',
+        action: null,
+        color: '#D32F2F',
+        icon: '🔥',
+        dotColor: '#F44336',
+        bgColor: '#FFEBEE'
+      };
+    }
+    return null;
+  };
+
+  const stockStatus = getStockStatus(stock);
+  const isOutOfStock = stock === 0;
 
   // =====================================
   // IMAGE ZOOM
@@ -536,9 +586,48 @@ function ProductDetails() {
               )}
             </div>
 
-            <div className={`product-stock ${inStock ? "in-stock" : "out-of-stock"}`}>
-              <span className="stock-indicator"></span>
-              {stockMessage}
+            {/* =====================================
+                STOCK STATUS - PREMIUM UI
+            ===================================== */}
+            <div className="stock-status-container">
+              <div 
+                className={`stock-status ${stockStatus?.type}`}
+                style={{
+                  backgroundColor: stockStatus?.bgColor,
+                  borderColor: stockStatus?.dotColor
+                }}
+              >
+                <div className="stock-status-content">
+                  <div className="stock-status-left">
+                    <span 
+                      className="stock-dot" 
+                      style={{ backgroundColor: stockStatus?.dotColor }}
+                    ></span>
+                    <div className="stock-status-text">
+                      <span 
+                        className="stock-label" 
+                        style={{ color: stockStatus?.color }}
+                      >
+                        {stockStatus?.label}
+                      </span>
+                      <span className="stock-message">
+                        {stockStatus?.message}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {isOutOfStock && (
+                    <button 
+                      className="notify-btn"
+                      onClick={() => {
+                        alert("We'll notify you when this product is back in stock!");
+                      }}
+                    >
+                      Notify Me
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* VARIANTS */}
@@ -565,33 +654,55 @@ function ProductDetails() {
               </div>
             )}
 
-            {/* QUANTITY */}
+            {/* QUANTITY - Updated with stock info */}
             <div className="quantity-section">
               <label className="quantity-label">Quantity</label>
               <div className="quantity-controls">
-                <button onClick={decreaseQty} disabled={quantity <= 1}>
+                <button 
+                  onClick={decreaseQty} 
+                  disabled={quantity <= 1 || isOutOfStock}
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M5 12h14" />
                   </svg>
                 </button>
                 <span className="quantity-value">{quantity}</span>
-                <button onClick={increaseQty} disabled={quantity >= stock || !inStock}>
+                <button 
+                  onClick={increaseQty} 
+                  disabled={quantity >= stock || isOutOfStock}
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                 </button>
               </div>
+              {!isOutOfStock && (
+                <span className="stock-available">
+                  {stock > 10 ? `${stock} available` : `${stock} left`}
+                </span>
+              )}
             </div>
 
-            {/* ACTION BUTTONS */}
+            {/* ACTION BUTTONS - Updated with disabled states */}
             <div className="action-buttons">
               <button
                 className="add-to-cart-btn"
                 onClick={handleAddToCart}
-                disabled={!inStock || addingToCart}
+                disabled={isOutOfStock || addingToCart}
+                style={{
+                  opacity: isOutOfStock ? '0.5' : '1',
+                  cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                }}
               >
                 {addingToCart ? (
                   <span className="btn-loader"></span>
+                ) : isOutOfStock ? (
+                  <>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />
+                    </svg>
+                    Out of Stock
+                  </>
                 ) : (
                   <>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -604,11 +715,23 @@ function ProductDetails() {
               <button
                 className="buy-now-btn"
                 onClick={handleBuyNow}
-                disabled={!inStock}
+                disabled={isOutOfStock}
+                style={{
+                  opacity: isOutOfStock ? '0.5' : '1',
+                  cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                }}
               >
-                Buy Now
+                {isOutOfStock ? 'Unavailable' : 'Buy Now'}
               </button>
-              <button className="wishlist-btn" aria-label="Add to wishlist">
+              <button 
+                className="wishlist-btn" 
+                aria-label="Add to wishlist"
+                disabled={isOutOfStock}
+                style={{
+                  opacity: isOutOfStock ? '0.4' : '1',
+                  cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                }}
+              >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
                 </svg>
@@ -713,7 +836,7 @@ function ProductDetails() {
                     {product.category?.name && <tr><td>Category</td><td>{product.category.name}</td></tr>}
                     <tr><td>Price</td><td>₹{sellingPrice}</td></tr>
                     {mrp !== sellingPrice && <tr><td>Original Price</td><td>₹{mrp}</td></tr>}
-                    <tr><td>Stock</td><td>{stockMessage}</td></tr>
+                    <tr><td>Stock</td><td>{stockStatus?.label || 'Out of Stock'}</td></tr>
                     {product.weight && <tr><td>Weight</td><td>{product.weight}</td></tr>}
                     {product.color && <tr><td>Color</td><td>{product.color}</td></tr>}
                     {selectedVariant?.capacity && !selectedVariant.isBase && (
@@ -845,93 +968,45 @@ function ProductDetails() {
 
                   {/* Reviews List */}
                   <div className="reviews-list">
-  {reviewsLoading ? (
-
-    <div className="reviews-loading">
-      Loading reviews...
-    </div>
-
-  ) : reviews.length === 0 ? (
-
-    <div className="no-reviews">
-      No reviews yet.
-    </div>
-
-  ) : (
-
-    reviews.map((review) => (
-
-      <div
-        key={review.id}
-        className="review-card"
-      >
-
-        <div className="review-header">
-
-          <div className="reviewer-info">
-
-            {review.profile_image ? (
-
-              <img
-                src={review.profile_image}
-                alt={review.user_name}
-                className="reviewer-avatar"
-              />
-
-            ) : (
-
-              <div className="reviewer-avatar-placeholder">
-
-                {(review.user_name || "U")
-                  .charAt(0)
-                  .toUpperCase()}
-
-              </div>
-
-            )}
-
-            <div>
-
-              <h4>
-
-                {review.user_name || "Anonymous"}
-
-              </h4>
-
-              <small>
-
-                {new Date(
-                  review.created_at
-                ).toLocaleDateString()}
-
-              </small>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="review-stars">
-
-          {"★".repeat(review.rating)}
-
-          {"☆".repeat(5 - review.rating)}
-
-        </div>
-
-        <p className="review-text">
-
-          {review.review}
-
-        </p>
-
-      </div>
-
-    ))
-
-  )}
-</div>
+                    {reviewsLoading ? (
+                      <div className="reviews-loading">
+                        Loading reviews...
+                      </div>
+                    ) : reviews.length === 0 ? (
+                      <div className="no-reviews">
+                        No reviews yet.
+                      </div>
+                    ) : (
+                      reviews.map((review) => (
+                        <div key={review.id} className="review-card">
+                          <div className="review-header">
+                            <div className="reviewer-info">
+                              {review.profile_image ? (
+                                <img
+                                  src={review.profile_image}
+                                  alt={review.user_name}
+                                  className="reviewer-avatar"
+                                />
+                              ) : (
+                                <div className="reviewer-avatar-placeholder">
+                                  {(review.user_name || "U").charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div>
+                                <h4>{review.user_name || "Anonymous"}</h4>
+                                <small>{new Date(review.created_at).toLocaleDateString()}</small>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="review-stars">
+                            {"★".repeat(review.rating)}
+                            {"☆".repeat(5 - review.rating)}
+                          </div>
+                          <p className="review-text">{review.review}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -996,16 +1071,31 @@ function ProductDetails() {
       )}
 
       {/* =========================
-          MOBILE STICKY BAR
+          MOBILE STICKY BAR - Updated
       ========================= */}
       <div className="mobile-sticky-bar">
         <div className="sticky-price">₹{sellingPrice}</div>
         <div className="sticky-actions">
-          <button onClick={handleAddToCart} disabled={!inStock || addingToCart}>
-            {addingToCart ? "..." : "Add to Cart"}
+          <button 
+            onClick={handleAddToCart} 
+            disabled={isOutOfStock || addingToCart}
+            style={{
+              opacity: isOutOfStock ? '0.5' : '1',
+              cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {addingToCart ? "..." : isOutOfStock ? "Out of Stock" : "Add to Cart"}
           </button>
-          <button className="sticky-buy" onClick={handleBuyNow} disabled={!inStock}>
-            Buy Now
+          <button 
+            className="sticky-buy" 
+            onClick={handleBuyNow} 
+            disabled={isOutOfStock}
+            style={{
+              opacity: isOutOfStock ? '0.5' : '1',
+              cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isOutOfStock ? "Unavailable" : "Buy Now"}
           </button>
         </div>
       </div>
