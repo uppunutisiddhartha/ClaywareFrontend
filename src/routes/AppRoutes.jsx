@@ -58,6 +58,14 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
+      <Route
+  path="/orders"
+  element={
+    <PrivateRoute>
+      <Orders />
+    </PrivateRoute>
+  }
+/>
 
 
       <Route path="/register" element={<UserRegister />} />

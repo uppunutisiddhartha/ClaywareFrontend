@@ -1,0 +1,788 @@
+/* ============================================
+   ORDERDETAILS.CSS - Premium Order Details
+   Flipkart/Amazon style with sidebar
+   ============================================ */
+
+.order-details-page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 24px 60px;
+    background: #ffffff;
+    min-height: 100vh;
+}
+
+/* ----- Back Button ----- */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #6e665e;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 24px;
+    padding: 8px 16px;
+    border-radius: 40px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.back-link:hover {
+    background: #f8f5f2;
+    border-color: #e4ddd6;
+    color: #1a1816;
+}
+
+.back-link svg {
+    transition: transform 0.2s ease;
+}
+
+.back-link:hover svg {
+    transform: translateX(-4px);
+}
+
+/* ============================================
+   MAIN LAYOUT (2-column)
+   ============================================ */
+
+.order-details-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+}
+
+/* ----- MAIN CONTENT ----- */
+.order-details-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ----- ORDER HEADER ----- */
+.order-details-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #faf8f6;
+    border-radius: 16px;
+    border: 1px solid #f0ebe6;
+    gap: 12px;
+}
+
+.order-details-header .order-id {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #1a1816;
+}
+
+.order-details-header .order-id span {
+    font-weight: 400;
+    color: #6e665e;
+}
+
+.order-details-header .order-date {
+    font-size: 0.85rem;
+    color: #6e665e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.order-details-header .order-date svg {
+    color: #C96A2B;
+}
+
+.order-details-header .order-status-badge {
+    padding: 4px 16px;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.order-details-header .order-status-badge.delivered {
+    background: #e6f3ea;
+    color: #0d6b3f;
+}
+.order-details-header .order-status-badge.cancelled {
+    background: #fce8e8;
+    color: #b33c3c;
+}
+.order-details-header .order-status-badge.packed {
+    background: #feeedb;
+    color: #b45f1a;
+}
+.order-details-header .order-status-badge.shipping {
+    background: #e1edf9;
+    color: #1a6a9e;
+}
+.order-details-header .order-status-badge.placed {
+    background: #ede7fc;
+    color: #5e3a9e;
+}
+
+/* ============================================
+   PRODUCT SECTION (Large)
+   ============================================ */
+
+.product-detail-section {
+    background: #ffffff;
+    border: 1px solid #f0ebe6;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.product-detail-section h3 {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1a1816;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.product-detail-section h3 svg {
+    color: #C96A2B;
+}
+
+.product-detail-item {
+    display: flex;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f0ebe6;
+}
+
+.product-detail-item:last-child {
+    border-bottom: none;
+}
+
+.product-detail-item .detail-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 14px;
+    background: #f0ebe6;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-detail-item .detail-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-detail-item .detail-image svg {
+    font-size: 3rem;
+    color: #b8aea4;
+}
+
+.product-detail-item .detail-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+}
+
+.product-detail-item .detail-info h4 {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #1a1816;
+}
+
+.product-detail-item .detail-info .variant {
+    font-size: 0.85rem;
+    color: #7f756b;
+}
+
+.product-detail-item .detail-info .seller {
+    font-size: 0.8rem;
+    color: #6e665e;
+}
+
+.product-detail-item .detail-info .price-qty {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #2d2926;
+}
+
+.product-detail-item .detail-info .price-qty .price {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #1a1816;
+}
+
+/* ============================================
+   TRACKING TIMELINE (Vertical)
+   ============================================ */
+
+.tracking-section {
+    background: #ffffff;
+    border: 1px solid #f0ebe6;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.tracking-section h3 {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1a1816;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tracking-section h3 svg {
+    color: #C96A2B;
+}
+
+.tracking-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    padding-left: 28px;
+}
+
+.tracking-timeline::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    background: #e4ddd6;
+    border-radius: 10px;
+}
+
+.tracking-step-vertical {
+    display: flex;
+    gap: 16px;
+    padding-bottom: 20px;
+    position: relative;
+}
+
+.tracking-step-vertical:last-child {
+    padding-bottom: 0;
+}
+
+.tracking-step-vertical .step-marker {
+    position: relative;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e4ddd6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.4s ease;
+}
+
+.tracking-step-vertical .step-marker.completed {
+    background: #0d6b3f;
+    box-shadow: 0 0 0 4px rgba(13, 107, 63, 0.15);
+}
+
+.tracking-step-vertical .step-marker.active {
+    background: #C96A2B;
+    animation: pulseGlow 2s infinite;
+    box-shadow: 0 0 0 4px rgba(201, 106, 43, 0.15);
+}
+
+.tracking-step-vertical .step-marker svg {
+    color: #ffffff;
+    font-size: 0.7rem;
+}
+
+.tracking-step-vertical .step-content {
+    flex: 1;
+}
+
+.tracking-step-vertical .step-content .step-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1a1816;
+}
+
+.tracking-step-vertical .step-content .step-title.completed {
+    color: #0d6b3f;
+}
+
+.tracking-step-vertical .step-content .step-title.active {
+    color: #C96A2B;
+}
+
+.tracking-step-vertical .step-content .step-date {
+    font-size: 0.75rem;
+    color: #6e665e;
+    margin-top: 2px;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+
+.order-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 20px;
+}
+
+.sidebar-card {
+    background: #ffffff;
+    border: 1px solid #f0ebe6;
+    border-radius: 16px;
+    padding: 18px 20px;
+}
+
+.sidebar-card h4 {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1a1816;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0ebe6;
+}
+
+.sidebar-card h4 svg {
+    color: #C96A2B;
+}
+
+.sidebar-card p {
+    font-size: 0.85rem;
+    color: #2d2926;
+    margin-bottom: 2px;
+}
+
+.sidebar-card p strong {
+    font-weight: 600;
+    color: #1a1816;
+}
+
+.sidebar-card .address-line {
+    font-size: 0.85rem;
+    color: #2d2926;
+    line-height: 1.6;
+}
+
+/* Payment Status in sidebar */
+.sidebar-card .payment-status-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 40px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.sidebar-card .payment-status-badge.paid {
+    background: #e6f3ea;
+    color: #0d6b3f;
+}
+.sidebar-card .payment-status-badge.failed {
+    background: #fce8e8;
+    color: #b33c3c;
+}
+.sidebar-card .payment-status-badge.pending {
+    background: #feeedb;
+    color: #b45f1a;
+}
+.sidebar-card .payment-status-badge.refunded {
+    background: #ede7fc;
+    color: #5e3a9e;
+}
+
+/* Invoice button */
+.invoice-btn-sidebar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    background: #f8f5f2;
+    border: 1px solid #e4ddd6;
+    color: #1a1816;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+
+.invoice-btn-sidebar:hover {
+    background: #f0ebe6;
+    border-color: #C96A2B;
+}
+
+/* Support buttons */
+.support-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.support-buttons button {
+    padding: 8px 16px;
+    border-radius: 40px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    border: 1px solid #e4ddd6;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.support-buttons button:hover {
+    background: #f8f5f2;
+    border-color: #C96A2B;
+}
+
+/* ============================================
+   ACTION BUTTONS (Bottom)
+   ============================================ */
+
+.order-actions-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    padding: 16px 0 4px;
+    border-top: 1px solid #f0ebe6;
+    margin-top: 4px;
+}
+
+.order-actions-bottom .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: 60px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    border: 1px solid #ddd6ce;
+    background: #ffffff;
+    color: #1c1a18;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.order-actions-bottom .action-btn:hover {
+    background: #faf7f4;
+    border-color: #C96A2B;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.order-actions-bottom .action-btn-primary {
+    background: #1a1816;
+    color: #ffffff;
+    border-color: #1a1816;
+}
+
+.order-actions-bottom .action-btn-primary:hover {
+    background: #C96A2B;
+    border-color: #C96A2B;
+}
+
+.order-actions-bottom .action-btn-danger {
+    border-color: #f0d0d0;
+    color: #b33c3c;
+}
+
+.order-actions-bottom .action-btn-danger:hover {
+    background: #fce8e8;
+    border-color: #b33c3c;
+}
+
+.order-actions-bottom .action-btn-outline {
+    border-color: #C96A2B;
+    color: #C96A2B;
+}
+
+.order-actions-bottom .action-btn-outline:hover {
+    background: #fcfaf8;
+}
+
+/* ============================================
+   REVIEW SECTION
+   ============================================ */
+
+.review-section {
+    background: #ffffff;
+    border: 1px solid #f0ebe6;
+    border-radius: 16px;
+    padding: 20px 24px;
+}
+
+.review-section h3 {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1a1816;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.review-section h3 svg {
+    color: #C96A2B;
+}
+
+.review-section .stars {
+    font-size: 1.5rem;
+    letter-spacing: 4px;
+    color: #f5a623;
+}
+
+.review-section .review-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.review-section .review-actions button {
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    border: 1px solid #e4ddd6;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.review-section .review-actions button:hover {
+    background: #f8f5f2;
+    border-color: #C96A2B;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(201, 106, 43, 0.2);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(201, 106, 43, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(201, 106, 43, 0);
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    .order-details-layout {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .order-sidebar {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .order-details-page {
+        padding: 20px 20px 48px;
+    }
+
+    .product-detail-item .detail-image {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .order-details-page {
+        padding: 14px 12px 40px;
+    }
+
+    .back-link {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+        margin-bottom: 16px;
+    }
+
+    .order-details-header {
+        padding: 12px 14px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .order-details-header .order-id {
+        font-size: 0.95rem;
+    }
+
+    .order-details-header .order-date {
+        font-size: 0.75rem;
+    }
+
+    .order-details-header .order-status-badge {
+        font-size: 0.65rem;
+        align-self: flex-start;
+    }
+
+    .product-detail-section {
+        padding: 16px;
+    }
+
+    .product-detail-item {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 12px 0;
+    }
+
+    .product-detail-item .detail-image {
+        width: 140px;
+        height: 140px;
+    }
+
+    .product-detail-item .detail-info .price-qty {
+        justify-content: center;
+    }
+
+    .tracking-section {
+        padding: 16px;
+    }
+
+    .tracking-timeline {
+        padding-left: 20px;
+    }
+
+    .tracking-timeline::before {
+        left: 4px;
+    }
+
+    .tracking-step-vertical {
+        gap: 12px;
+        padding-bottom: 16px;
+    }
+
+    .tracking-step-vertical .step-marker {
+        width: 16px;
+        height: 16px;
+    }
+
+    .tracking-step-vertical .step-content .step-title {
+        font-size: 0.8rem;
+    }
+
+    .tracking-step-vertical .step-content .step-date {
+        font-size: 0.65rem;
+    }
+
+    .order-sidebar {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .sidebar-card {
+        padding: 14px 16px;
+    }
+
+    .sidebar-card p {
+        font-size: 0.8rem;
+    }
+
+    .order-actions-bottom {
+        gap: 8px 10px;
+        padding-top: 14px;
+    }
+
+    .order-actions-bottom .action-btn {
+        padding: 8px 16px;
+        font-size: 0.75rem;
+        flex: 1;
+        justify-content: center;
+        min-width: 70px;
+    }
+
+    .review-section {
+        padding: 16px;
+    }
+
+    .review-section .stars {
+        font-size: 1.2rem;
+    }
+
+    .review-section .review-actions button {
+        padding: 6px 16px;
+        font-size: 0.75rem;
+        flex: 1;
+        text-align: center;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 380px) {
+    .order-details-page {
+        padding: 10px 8px 32px;
+    }
+
+    .product-detail-item .detail-image {
+        width: 100px;
+        height: 100px;
+    }
+
+    .product-detail-item .detail-info h4 {
+        font-size: 0.9rem;
+    }
+
+    .order-actions-bottom .action-btn {
+        font-size: 0.65rem;
+        padding: 6px 10px;
+        min-width: 50px;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+button:focus-visible {
+    outline: 3px solid #C96A2B;
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}

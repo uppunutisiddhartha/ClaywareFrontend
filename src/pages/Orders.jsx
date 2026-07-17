@@ -1,757 +1,376 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
 
 import "./styles/orders.css";
 
 import {
     FiPackage,
-    FiCheck,
-    FiClock,
-    FiTruck,
-    FiCreditCard,
     FiShoppingBag,
-    FiRefreshCw,
-    FiDownload,
-    FiChevronDown,
-    FiMapPin,
+    FiSearch,
+    FiChevronRight,
     FiCalendar,
-    FiRotateCcw,
-    FiXCircle,
-    FiEye,
+    FiClock,
 } from "react-icons/fi";
 
-
 function Orders() {
-
     const navigate = useNavigate();
 
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Which order is expanded
-    const [expandedOrder, setExpandedOrder] = useState(null);
+    // UI filter states
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterStatus, setFilterStatus] = useState("All");
+    const [sortBy, setSortBy] = useState("Newest");
 
     useEffect(() => {
-
         fetchOrders();
-
     }, []);
 
     const fetchOrders = async () => {
-
         try {
-
             const token = localStorage.getItem("token");
-
-            const response = await axios.get(
-
-                "https://claywarebackend.onrender.com/api/user/user-order-history/",
-
-                {
-                    headers: {
-                        Authorization: `Token ${token}`,
-                    },
-                }
-
-            );
-
+            const response = await api.get("/user/user-order-history/");
             setOrders(response.data.orders || []);
-
         } catch (err) {
-
             console.log(err);
-
             setOrders([]);
-
         } finally {
-
             setLoading(false);
-
         }
-
     };
 
     /* -----------------------------------
-       Expand / Collapse
+       Order Status Helpers
     ----------------------------------- */
-
-    const toggleOrder = (id) => {
-
-        if (expandedOrder === id) {
-
-            setExpandedOrder(null);
-
-        } else {
-
-            setExpandedOrder(id);
-
-        }
-
+    const getStatusDisplay = (status) => {
+        return status.replaceAll("_", " ");
     };
 
-    /* -----------------------------------
-       Order Status
-    ----------------------------------- */
-
-    const getStatusClass = (status) => {
-
+    const getStatusDot = (status) => {
         switch (status) {
-
             case "DELIVERED":
-                return "status delivered";
-
+                return "dot delivered";
             case "OUT_FOR_DELIVERY":
-                return "status shipping";
-
+                return "dot shipping";
             case "PACKED":
-                return "status packed";
-
+                return "dot packed";
             case "PLACED":
-                return "status placed";
-
+                return "dot placed";
             case "CANCELLED":
-                return "status cancelled";
-
+                return "dot cancelled";
             default:
-                return "status";
+                return "dot";
         }
+    };
 
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "DELIVERED":
+                return "#0d6b3f";
+            case "OUT_FOR_DELIVERY":
+                return "#1a6a9e";
+            case "PACKED":
+                return "#b45f1a";
+            case "PLACED":
+                return "#5e3a9e";
+            case "CANCELLED":
+                return "#b33c3c";
+            default:
+                return "#6e665e";
+        }
     };
 
     /* -----------------------------------
-       Payment Status
+       Calculate stats
     ----------------------------------- */
+    const totalOrders = orders.length;
+    const delivered = orders.filter((o) => o.status === "DELIVERED").length;
+    const processing = orders.filter(
+        (o) => o.status === "PLACED" || o.status === "PACKED" || o.status === "OUT_FOR_DELIVERY"
+    ).length;
+    const cancelled = orders.filter((o) => o.status === "CANCELLED").length;
 
-    const paymentClass = (status) => {
-
-        if (status === "SUCCESS")
-            return "paid";
-
-        if (status === "FAILED")
-            return "failed";
-
-        return "pending";
-
+    /* -----------------------------------
+       Navigate to Order Details
+    ----------------------------------- */
+    const handleOrderClick = (orderId) => {
+        navigate(`/orders/${orderId}`);
     };
 
     /* -----------------------------------
-       Loading
+       Loading State
     ----------------------------------- */
-
     if (loading) {
-
         return (
-
-            <div className="orders-loading">
-
-                <div className="loader"></div>
-
-                <h2>Loading your Orders...</h2>
-
+            <div className="orders-page">
+                <Navbar />
+                <div className="orders-header">
+                    <h1>
+                        <FiPackage />
+                        My Orders
+                    </h1>
+                    <p>Loading your orders...</p>
+                </div>
+                <div className="orders-loading">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="skeleton-order">
+                            <div className="skeleton-thumb"></div>
+                            <div style={{ flex: 1 }}>
+                                <div className="skeleton-line" style={{ width: "60%" }}></div>
+                                <div
+                                    className="skeleton-line"
+                                    style={{ width: "40%", marginTop: "8px" }}
+                                ></div>
+                                <div
+                                    className="skeleton-line short"
+                                    style={{ marginTop: "8px" }}
+                                ></div>
+                            </div>
+                            <div style={{ minWidth: "80px" }}>
+                                <div className="skeleton-line short"></div>
+                                <div
+                                    className="skeleton-line"
+                                    style={{ width: "60%", marginTop: "8px" }}
+                                ></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <Footer />
             </div>
-
         );
-
     }
 
     /* -----------------------------------
-       Empty Orders
+       Empty State
     ----------------------------------- */
-
     if (orders.length === 0) {
-
         return (
-
-            <div className="orders-empty">
-
-                <FiShoppingBag />
-
-                <h2>No Orders Yet</h2>
-
-                <p>
-
-                    Looks like you haven't purchased
-                    anything yet.
-
-                </p>
-
-                <button
-                    onClick={() => navigate("/shop")}
-                >
-
-                    Continue Shopping
-
-                </button>
-
+            <div className="orders-page">
+                <Navbar />
+                <div className="orders-empty">
+                    <FiShoppingBag />
+                    <h2>No Orders Yet</h2>
+                    <p>Start exploring beautiful handcrafted clay products.</p>
+                    <button onClick={() => navigate("/shop")}>Continue Shopping</button>
+                </div>
+                <Footer />
             </div>
-
         );
-
     }
 
+    /* -----------------------------------
+       Filter & Sort Orders
+    ----------------------------------- */
+    let filteredOrders = [...orders];
+
+    if (filterStatus !== "All") {
+        filteredOrders = filteredOrders.filter((o) => o.status === filterStatus);
+    }
+
+    if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filteredOrders = filteredOrders.filter(
+            (o) =>
+                o.order_id.toString().includes(term) ||
+                o.items.some((item) => item.product_name.toLowerCase().includes(term)) ||
+                new Date(o.created_at).toLocaleDateString().includes(term)
+        );
+    }
+
+    // Sort
+    switch (sortBy) {
+        case "Newest":
+            filteredOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            break;
+        case "Oldest":
+            filteredOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            break;
+        case "Price High-Low":
+            filteredOrders.sort((a, b) => Number(b.total_price) - Number(a.total_price));
+            break;
+        case "Price Low-High":
+            filteredOrders.sort((a, b) => Number(a.total_price) - Number(b.total_price));
+            break;
+        default:
+            break;
+    }
+
+    /* -----------------------------------
+       Main Render
+    ----------------------------------- */
     return (
-
         <div className="orders-page">
+            <Navbar />
 
-            <Navbar/>
-
+            {/* ==========================
+                HEADER
+            ========================== */}
             <div className="orders-header">
-
                 <div>
-
                     <h1>
-
                         <FiPackage />
-
                         My Orders
-
                     </h1>
-
                     <p>
-
-                        {orders.length} Order
-                        {orders.length > 1 ? "s" : ""}
-
+                        {filteredOrders.length} Order{filteredOrders.length > 1 ? "s" : ""}
+                        {filteredOrders.length !== orders.length
+                            ? ` (${orders.length} total)`
+                            : ""}
                     </p>
-
                 </div>
 
+                <div className="stats-bar">
+                    <div className="stat">
+                        Total <span>{totalOrders}</span>
+                    </div>
+                    <div className="stat">
+                        Delivered <span className="clay-num">{delivered}</span>
+                    </div>
+                    <div className="stat">
+                        Processing <span>{processing}</span>
+                    </div>
+                    <div className="stat">
+                        Cancelled <span>{cancelled}</span>
+                    </div>
+                </div>
             </div>
 
-            <div className="orders-container">
-                {orders.map((order) => (
-
-    <div
-        key={order.order_id}
-        className={`modern-order-card ${
-            expandedOrder === order.order_id
-                ? "expanded"
-                : ""
-        }`}
-    >
-
-        {/* ==========================
-            TOP
-        =========================== */}
-
-        <div className="order-card-top">
-
-            <div>
-
-                <div className="order-number">
-
-                    Order #{order.order_id}
-
+            {/* ==========================
+                SEARCH & FILTER
+            ========================== */}
+            <div className="search-filter-row">
+                <div className="search-box-compact">
+                    <FiSearch />
+                    <input
+                        type="text"
+                        placeholder="Search orders..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        aria-label="Search orders"
+                    />
                 </div>
 
-                <div className="order-price">
-
-                    ₹ {order.total_price}
-
+                <div className="filter-chips">
+                    {["All", "PLACED", "PACKED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"].map(
+                        (status) => (
+                            <button
+                                key={status}
+                                className={`filter-chip ${
+                                    filterStatus === status ? "active" : ""
+                                }`}
+                                onClick={() => setFilterStatus(status)}
+                                aria-label={`Filter by ${status}`}
+                            >
+                                {status === "All" ? "All" : getStatusDisplay(status)}
+                            </button>
+                        )
+                    )}
                 </div>
 
-                <div className="order-date">
-
-                    <FiCalendar />
-
-                    {new Date(
-                        order.created_at
-                    ).toLocaleDateString()}
-
-                </div>
-
-            </div>
-
-            <div
-                className={getStatusClass(
-                    order.status
-                )}
-            >
-
-                {order.status.replaceAll(
-                    "_",
-                    " "
-                )}
-
-            </div>
-
-        </div>
-
-        {/* ==========================
-            PRODUCTS
-        =========================== */}
-
-        <div className="products-list">
-
-            {order.items.map((item, index) => (
-
-                <div
-                    className="product-card"
-                    key={index}
+                <select
+                    className="sort-select-compact"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    aria-label="Sort orders"
                 >
+                    <option value="Newest">Newest</option>
+                    <option value="Oldest">Oldest</option>
+                    <option value="Price High-Low">Price: High-Low</option>
+                    <option value="Price Low-High">Price: Low-High</option>
+                </select>
+            </div>
 
-                    <div className="product-image">
+            {/* ==========================
+                ORDERS LIST
+            ========================== */}
+            <div className="orders-list">
+                {filteredOrders.map((order) => {
+                    const firstItem = order.items[0];
+                    const remainingCount = order.items.length - 1;
 
-                        {item.image ? (
-
-                            <img
-                                src={item.image}
-                                alt={item.product_name}
-                            />
-
-                        ) : (
-
-                            <FiPackage />
-
-                        )}
-
-                    </div>
-
-                    <div className="product-details">
-
-                        <h3>
-
-                            {item.product_name}
-
-                        </h3>
-
-                        <span>
-
-                            {item.variant}
-
-                        </span>
-
-                    </div>
-
-                    <div className="product-qty">
-
-                        Qty {item.quantity}
-
-                    </div>
-
-                    <div className="product-price">
-
-                        ₹ {item.price}
-
-                    </div>
-
-                </div>
-
-            ))}
-
-        </div>
-
-        {/* ==========================
-            TRACKING
-        =========================== */}
-
-        <div className="tracking-bar">
-
-            {order.tracking.map((step, index) => (
-
-                <div
-                    key={index}
-                    className="tracking-item"
-                >
-
-                    <div
-                        className={
-                            step.done
-                                ? "tracking-circle active"
-                                : "tracking-circle"
-                        }
-                    >
-
-                        {step.done ? (
-
-                            <FiCheck />
-
-                        ) : (
-
-                            <FiClock />
-
-                        )}
-
-                    </div>
-
-                    <small>
-
-                        {step.stage}
-
-                    </small>
-
-                    {index !==
-                        order.tracking.length - 1 && (
-
+                    return (
                         <div
-                            className={
-                                step.done
-                                    ? "tracking-line active"
-                                    : "tracking-line"
-                            }
-                        />
-
-                    )}
-
-                </div>
-
-            ))}
-
-        </div>
-
-        {/* ==========================
-            QUICK INFO
-        =========================== */}
-
-        <div className="quick-info">
-
-            <div className="payment-chip">
-
-                <FiCreditCard />
-
-                {order.payment_method}
-
-            </div>
-
-            <div
-                className={`payment-status ${paymentClass(
-                    order.payment_status
-                )}`}
-            >
-
-                {order.payment_status}
-
-            </div>
-
-            <div className="delivery-chip">
-
-                <FiTruck />
-
-                {order.current_location}
-
-            </div>
-
-        </div>
-
-        {/* ==========================
-            VIEW DETAILS BUTTON
-        =========================== */}
-
-        <button
-
-            className="details-btn"
-
-            onClick={(e) => {
-
-                e.stopPropagation();
-
-                toggleOrder(order.order_id);
-
-            }}
-
-        >
-
-            <FiEye />
-
-            {expandedOrder === order.order_id
-                ? "Hide Details"
-                : "View Details"}
-
-            <FiChevronDown
-                className={
-                    expandedOrder === order.order_id
-                        ? "rotate"
-                        : ""
-                }
-            />
-
-        </button>
-
-        {/* ==========================
-            EXPANDABLE SECTION
-            Part 3 Starts Here
-        =========================== */}
-
-        <div
-            className={`expand-content ${
-                expandedOrder === order.order_id
-                    ? "expanded"
-                    : ""
-            }`}
-        >
-                        {/* ==========================
-                DELIVERY DETAILS
-            ========================== */}
-
-            <div className="details-grid">
-
-                <div className="detail-card">
-
-                    <h4>
-
-                        <FiMapPin />
-
-                        Delivery Address
-
-                    </h4>
-
-                    {order.address ? (
-
-                        <>
-                            <strong>
-
-                                {order.address.full_name}
-
-                            </strong>
-
-                            <p>
-
-                                {order.address.address_line}
-
-                            </p>
-
-                            <p>
-
-                                {order.address.city},{" "}
-                                {order.address.state}
-
-                            </p>
-
-                            <p>
-
-                                {order.address.pincode}
-
-                            </p>
-
-                            <p>
-
-                                {order.address.phone_number}
-
-                            </p>
-                        </>
-
-                    ) : (
-
-                        <p>No Address Available</p>
-
-                    )}
-
-                </div>
-
-                <div className="detail-card">
-
-                    <h4>
-
-                        <FiTruck />
-
-                        Delivery Information
-
-                    </h4>
-
-                    <p>
-
-                        <strong>Partner :</strong>
-
-                        {order.delivery_partner}
-
-                    </p>
-
-                    <p>
-
-                        <strong>Current :</strong>
-
-                        {order.current_location}
-
-                    </p>
-
-                    <p>
-
-                        <strong>Expected :</strong>
-
-                        {order.expected_delivery}
-
-                    </p>
-
-                </div>
-
-                <div className="detail-card">
-
-                    <h4>
-
-                        <FiCreditCard />
-
-                        Payment
-
-                    </h4>
-
-                    <p>
-
-                        <strong>Method :</strong>
-
-                        {order.payment_method}
-
-                    </p>
-
-                    <p>
-
-                        <strong>Status :</strong>
-
-                        <span
-                            className={`payment-status ${paymentClass(
-                                order.payment_status
-                            )}`}
+                            key={order.order_id}
+                            className="order-card-compact"
+                            onClick={() => handleOrderClick(order.order_id)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    handleOrderClick(order.order_id);
+                                }
+                            }}
+                            aria-label={`Order #${order.order_id}`}
                         >
+                            <div className="order-main">
+                                {/* Product Image */}
+                                <div className="product-thumb">
+                                    {firstItem?.image ? (
+                                        <img src={firstItem.image} alt={firstItem.product_name} />
+                                    ) : (
+                                        <FiPackage />
+                                    )}
+                                </div>
 
-                            {order.payment_status}
+                                {/* Product Info */}
+                                <div className="product-info">
+                                    <h3>{firstItem?.product_name || "Product"}</h3>
+                                    <div className="variant">{firstItem?.variant || ""}</div>
+                                    <div className="qty-price">
+                                        <span>Qty {firstItem?.quantity || 0}</span>
+                                        <span className="price">₹{firstItem?.price || 0}</span>
+                                    </div>
+                                    {remainingCount > 0 && (
+                                        <span className="more-products-badge">
+                                            +{remainingCount} more product
+                                            {remainingCount > 1 ? "s" : ""}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
 
-                        </span>
+                            {/* Order Meta */}
+                            <div className="order-meta-compact">
+                                <div className="status-indicator">
+                                    <span className={getStatusDot(order.status)}></span>
+                                    {getStatusDisplay(order.status)}
+                                </div>
+                                <div className="delivery-date">
+                                    <FiCalendar style={{ display: "inline", marginRight: "4px" }} />
+                                    {order.expected_delivery || "Delivery pending"}
+                                </div>
+                                <div className="order-total">₹{order.total_price}</div>
+                                <FiChevronRight className="arrow-icon" />
+                            </div>
+                        </div>
+                    );
+                })}
 
-                    </p>
-
-                    <p>
-
-                        <strong>Total :</strong>
-
-                        ₹ {order.total_price}
-
-                    </p>
-
-                </div>
-
+                {filteredOrders.length === 0 && (
+                    <div className="orders-empty" style={{ padding: "40px 20px", minHeight: "auto" }}>
+                        <p style={{ color: "#6e665e" }}>No orders match your filters.</p>
+                        <button
+                            onClick={() => {
+                                setSearchTerm("");
+                                setFilterStatus("All");
+                            }}
+                            style={{ marginTop: "16px", padding: "10px 32px", fontSize: "0.85rem" }}
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* ==========================
-                ACTION BUTTONS
-            ========================== */}
-
-            <div className="footer-buttons">
-
-                <button
-                    className="buy-btn"
-                    onClick={() => navigate("/shop")}
-                >
-
-                    <FiRefreshCw />
-
-                    Buy Again
-
-                </button>
-
-                {order.can_download_invoice && (
-
-                    <button
-                        className="invoice-btn"
-                    >
-
-                        <FiDownload />
-
-                        Invoice
-
-                    </button>
-
-                )}
-
-                {order.can_cancel && (
-
-                    <button
-                        className="cancel-btn"
-                    >
-
-                        <FiXCircle />
-
-                        Cancel Order
-
-                    </button>
-
-                )}
-
-                {order.can_return && (
-
-                    <button
-                        className="return-btn"
-                    >
-
-                        <FiRefreshCw />
-
-                        Return Product
-
-                    </button>
-
-                )}
-
-            </div>
-
+            <Footer />
         </div>
-
-    </div>
-
-))}
-
-            </div>
-
-            {/* ==========================
-                SUMMARY
-            ========================== */}
-
-            <div className="orders-footer-summary">
-
-                <div className="summary-card">
-
-                    <h4>
-
-                        Total Orders
-
-                    </h4>
-
-                    <span>
-
-                        {orders.length}
-
-                    </span>
-
-                </div>
-
-                <div className="summary-card">
-
-                    <h4>
-
-                        Total Purchased
-
-                    </h4>
-
-                    <span>
-
-                        ₹ {
-
-                            orders.reduce(
-
-                                (sum, order) =>
-
-                                    sum +
-                                    Number(order.total_price),
-
-                                0
-
-                            )
-
-                        }
-
-                    </span>
-
-                </div>
-<footer/>
-            </div>
-            
-
-        </div>
-
     );
-
 }
 
 export default Orders;
-                
