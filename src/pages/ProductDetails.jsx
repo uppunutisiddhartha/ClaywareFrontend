@@ -1,5 +1,4 @@
-// ProductDetails.jsx
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -48,6 +47,71 @@ function ProductDetails() {
 
   // Related products
   const [relatedProducts, setRelatedProducts] = useState([]);
+
+  // =====================================
+  // MOBILE SCROLL BEHAVIOR
+  // =====================================
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [scrollState, setScrollState] = useState({
+    showBottomNav: true,
+    showStickyBar: false,
+    showCompactHeader: false,
+  });
+
+  const productRef = useRef(null);
+  const heroRef = useRef(null);
+  const scrollTimeout = useRef(null);
+
+  // Check if mobile on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Scroll handler with throttling
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleScroll = () => {
+      if (scrollTimeout.current) return;
+
+      scrollTimeout.current = setTimeout(() => {
+        const scrollY = window.scrollY;
+        const heroHeight = heroRef.current?.offsetHeight || 400;
+        
+        // Thresholds
+        const stickyBarThreshold = Math.min(heroHeight * 0.3, 220);
+        const compactHeaderThreshold = Math.min(heroHeight * 0.5, 320);
+
+        // Calculate new states
+        const shouldShowStickyBar = scrollY > stickyBarThreshold;
+        const shouldShowCompactHeader = scrollY > compactHeaderThreshold;
+        const shouldShowBottomNav = !shouldShowStickyBar;
+
+        setScrollState({
+          showBottomNav: shouldShowBottomNav,
+          showStickyBar: shouldShowStickyBar,
+          showCompactHeader: shouldShowCompactHeader,
+        });
+
+        scrollTimeout.current = null;
+      }, 100); // Throttle to 100ms
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+    };
+  }, [isMobile]);
 
   // =====================================
   // FETCH PRODUCT
@@ -514,11 +578,52 @@ function ProductDetails() {
     <>
       <Navbar />
 
-      <div className="product-details-container">
+      {/* =========================
+          COMPACT STICKY HEADER (Mobile Only)
+      ========================= */}
+      <div className={`compact-header ${scrollState.showCompactHeader && isMobile ? 'visible' : ''}`}>
+        <button className="compact-back" onClick={() => navigate(-1)}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <img 
+          src={selectedImage} 
+          alt={product.productname} 
+          className="compact-thumbnail"
+        />
+        <span className="compact-title">{product.productname}</span>
+        <span className="compact-price">₹{sellingPrice}</span>
+        <button className="compact-search" onClick={() => navigate("/shop")}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+        </button>
+        <button className="compact-share" onClick={() => {
+          if (navigator.share) {
+            navigator.share({
+              title: product.productname,
+              text: `Check out ${product.productname} on ClayWare`,
+              url: window.location.href,
+            });
+          }
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="product-details-container" ref={productRef}>
         {/* =========================
             MAIN PRODUCT SECTION
         ========================= */}
-        <div className="product-main-layout">
+        <div className="product-main-layout" ref={heroRef}>
           {/* IMAGE GALLERY */}
           <div className="product-gallery">
             <div className="thumbnail-list">
@@ -1071,9 +1176,9 @@ function ProductDetails() {
       )}
 
       {/* =========================
-          MOBILE STICKY BAR - Updated
+          MOBILE STICKY BAR - Updated with Scroll Behavior
       ========================= */}
-      <div className="mobile-sticky-bar">
+      <div className={`mobile-sticky-bar ${scrollState.showStickyBar && isMobile ? 'visible' : ''}`}>
         <div className="sticky-price">₹{sellingPrice}</div>
         <div className="sticky-actions">
           <button 

@@ -11,17 +11,21 @@ import {
     FiMapPin,
     FiSettings,
     FiLogOut,
+    FiHome,
+    FiShoppingCart,
 } from "react-icons/fi";
 
 import {
     Link,
     useNavigate,
+    useLocation,
 } from "react-router-dom";
 
 import {
     useState,
     useEffect,
     useRef,
+    useCallback,
 } from "react";
 
 import api from "../api/axios";
@@ -29,6 +33,7 @@ import api from "../api/axios";
 function Navbar() {
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [cartCount, setCartCount] = useState(0);
@@ -36,10 +41,33 @@ function Navbar() {
     const [mobileMenu, setMobileMenu] = useState(false);
 
     const dropdownRef = useRef();
+    const mobileMenuRef = useRef();
 
     // -------------------------------
     // Login & Cart Check
     // -------------------------------
+
+    const fetchCartCount = useCallback(async () => {
+
+        const token = localStorage.getItem("token");
+
+        if (!token) return;
+
+        try {
+
+            const response = await api.get("/user/viewcart/");
+
+            setCartCount(response.data.total_items);
+
+        } catch (error) {
+
+            console.log(error);
+
+            setCartCount(0);
+
+        }
+
+    }, []);
 
     useEffect(() => {
 
@@ -61,7 +89,7 @@ function Navbar() {
             window.removeEventListener("cartUpdated", updateCart);
         };
 
-    }, []);
+    }, [fetchCartCount]);
 
     // -------------------------------
     // Close Dropdown Outside Click
@@ -91,29 +119,74 @@ function Navbar() {
     }, []);
 
     // -------------------------------
-    // Fetch Cart Count
+    // Close Mobile Menu Outside Click
     // -------------------------------
-const fetchCartCount = async () => {
 
-    const token = localStorage.getItem("token");
+    useEffect(() => {
 
-    if (!token) return;
+        const handleClickOutside = (event) => {
 
-    try {
+            if (
+                mobileMenu &&
+                mobileMenuRef.current &&
+                !mobileMenuRef.current.contains(event.target) &&
+                !event.target.closest('.mobile-menu')
+            ) {
+                closeMobileMenu();
+            }
 
-        const response = await api.get("/user/viewcart/");
+        };
 
-        setCartCount(response.data.total_items);
+        document.addEventListener("mousedown", handleClickOutside);
 
-    } catch (error) {
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
 
-        console.log(error);
+    }, [mobileMenu]);
 
-        setCartCount(0);
+    // -------------------------------
+    // Body Scroll Lock
+    // -------------------------------
 
-    }
+    useEffect(() => {
 
-};
+        if (mobileMenu) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        return () => {
+            document.body.style.overflow = '';
+        };
+
+    }, [mobileMenu]);
+
+    // -------------------------------
+    // Close Mobile Menu on Route Change
+    // -------------------------------
+
+    useEffect(() => {
+
+        closeMobileMenu();
+
+    }, [location]);
+
+    // -------------------------------
+    // Toggle Functions
+    // -------------------------------
+
+    const toggleDropdown = () => {
+        setShowDropdown(!showDropdown);
+    };
+
+    const toggleMobileMenu = () => {
+        setMobileMenu(!mobileMenu);
+    };
+
+    const closeMobileMenu = () => {
+        setMobileMenu(false);
+    };
 
     // -------------------------------
     // Logout
@@ -127,305 +200,441 @@ const fetchCartCount = async () => {
 
         setCartCount(0);
         setIsLoggedIn(false);
+        setShowDropdown(false);
+        closeMobileMenu();
 
         navigate("/login");
 
     };
 
+    // -------------------------------
+    // Navigation Handler
+    // -------------------------------
+
+    const handleNavClick = (path) => {
+        navigate(path);
+        closeMobileMenu();
+    };
+
+    // -------------------------------
+    // Check if path is active
+    // -------------------------------
+
+    const isActive = (path) => {
+        return location.pathname === path;
+    };
+
+    // -------------------------------
+    // Bottom Navigation Items
+    // -------------------------------
+
+    const bottomNavItems = [
+        { icon: FiHome, label: "Home", path: "/" },
+        { icon: FiShoppingBag, label: "Shop", path: "/shop" },
+        { icon: FiSearch, label: "Search", path: "/shop" },
+        { 
+            icon: FiShoppingCart, 
+            label: "Cart", 
+            path: "/cart",
+            badge: cartCount > 0 ? (cartCount > 99 ? "99+" : cartCount) : null
+        },
+        { 
+            icon: FiUser, 
+            label: isLoggedIn ? "Me" : "Login", 
+            path: isLoggedIn ? "/profile" : "/login"
+        },
+    ];
+
     return (
 
-        <header className="navbar">
+        <>
 
             {/* ========================= */}
-            {/* Logo */}
+            {/* MAIN NAVBAR */}
             {/* ========================= */}
 
-            <div
-                className="logo"
-                onClick={() => navigate("/")}
-            >
-                CLAYWARE
-            </div>
+            <header className="navbar">
 
-            {/* ========================= */}
-            {/* Navigation */}
-            {/* ========================= */}
-
-            <nav className={mobileMenu ? "active" : ""}>
-
-                <Link to="/">HOME</Link>
-
-                <Link to="/shop">SHOP</Link>
-
-                <Link to="/our-story">OUR STORY</Link>
-
-                <Link to="/sell">SELL</Link>
-
-            </nav>
-
-            {/* ========================= */}
-            {/* Right Side */}
-            {/* ========================= */}
-
-            <div className="nav-actions">
-
-                {/* Search */}
-
-                <FiSearch
-                    className="nav-icon"
-                    onClick={() => navigate("/shop")}
-                />
-
-                {/* Cart */}
+                {/* ========================= */}
+                {/* Logo */}
+                {/* ========================= */}
 
                 <div
-                    className="cart-wrapper"
-                    onClick={() => navigate("/cart")}
+                    className="logo"
+                    onClick={() => navigate("/")}
                 >
-
-                    <FiShoppingBag
-                        className="nav-icon cart-icon"
-                    />
-
-                    {cartCount > 0 && (
-
-                        <span className="cart-badge">
-
-                            {cartCount > 99
-                                ? "99+"
-                                : cartCount}
-
-                        </span>
-
-                    )}
-
+                    CLAYWARE
                 </div>
 
                 {/* ========================= */}
-                {/* Login */}
+                {/* Desktop Navigation */}
                 {/* ========================= */}
 
-                {!isLoggedIn ? (
+                <nav className="desktop-nav">
 
-                    <button
-                        className="login-btn"
-                        onClick={() => navigate("/login")}
+                    <Link 
+                        to="/" 
+                        className={isActive("/") ? "active-link" : ""}
                     >
-                        LOGIN
-                    </button>
+                        HOME
+                    </Link>
 
-                ) : (
+                    <Link 
+                        to="/shop" 
+                        className={isActive("/shop") ? "active-link" : ""}
+                    >
+                        SHOP
+                    </Link>
 
+                    <Link 
+                        to="/our-story" 
+                        className={isActive("/our-story") ? "active-link" : ""}
+                    >
+                        OUR STORY
+                    </Link>
+
+                    <Link 
+                        to="/sell" 
+                        className={isActive("/sell") ? "active-link" : ""}
+                    >
+                        SELL
+                    </Link>
+
+                </nav>
+
+                {/* ========================= */}
+                {/* Right Side Actions */}
+                {/* ========================= */}
+
+                <div className="nav-actions">
+
+                    {/* Search - Desktop Only */}
+                    <FiSearch
+                        className="nav-icon desktop-only"
+                        onClick={() => navigate("/shop")}
+                    />
+
+                    {/* Cart - Desktop Only */}
                     <div
-                        className="account-menu"
-                        ref={dropdownRef}
+                        className="cart-wrapper desktop-only"
+                        onClick={() => navigate("/cart")}
                     >
 
-                        {/* Button */}
+                        <FiShoppingBag className="nav-icon cart-icon" />
 
-                        <button
-                            className="account-btn"
-                            onClick={() =>
-                                setShowDropdown(!showDropdown)
-                            }
-                        >
+                        {cartCount > 0 && (
 
-                            <div className="avatar-circle">
+                            <span className="cart-badge">
 
-                                <FiUser />
-
-                            </div>
-
-                            <span>
-
-                                My Account
+                                {cartCount > 99
+                                    ? "99+"
+                                    : cartCount}
 
                             </span>
-
-                            <FiChevronDown
-                                className={
-                                    showDropdown
-                                        ? "rotate"
-                                        : ""
-                                }
-                            />
-
-                        </button>
-
-                        {/* Dropdown */}
-
-                        {showDropdown && (
-
-                            <div className="account-dropdown">
-
-                                {/* Header */}
-
-                                <div className="dropdown-header">
-
-                                    <div className="profile-avatar">
-
-                                        <FiUser />
-
-                                    </div>
-
-                                    <div>
-
-                                        <h4>
-
-                                            Welcome
-
-                                        </h4>
-
-                                        <p>
-
-                                            {
-                                                localStorage.getItem(
-                                                    "email"
-                                                )
-                                            }
-
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                                <div className="dropdown-divider"></div>
-
-                                {/* Profile */}
-
-                                <div
-                                    className="dropdown-item"
-                                    onClick={() =>
-                                        navigate("/profile")
-                                    }
-                                >
-
-                                    <FiUser />
-
-                                    <span>
-
-                                        My Profile
-
-                                    </span>
-
-                                </div>
-
-                                {/* Orders */}
-
-                                <div
-                                    className="dropdown-item"
-                                    onClick={() =>
-                                        navigate("/orders")
-                                    }
-                                >
-
-                                    <FiPackage />
-
-                                    <span>
-
-                                        My Orders
-
-                                    </span>
-
-                                </div>
-
-                                {/* Wishlist */}
-
-                                <div
-                                    className="dropdown-item"
-                                    onClick={() =>
-                                        navigate("/wishlist")
-                                    }
-                                >
-
-                                    <FiHeart />
-
-                                    <span>
-
-                                        Wishlist
-
-                                    </span>
-
-                                </div>
-
-                                {/* Address */}
-
-                                <div
-                                    className="dropdown-item"
-                                    onClick={() =>
-                                        navigate("/addresses")
-                                    }
-                                >
-
-                                    <FiMapPin />
-
-                                    <span>
-
-                                        My Addresses
-
-                                    </span>
-
-                                </div>
-
-                                {/* Settings */}
-
-                                <div
-                                    className="dropdown-item"
-                                    onClick={() =>
-                                        navigate("/settings")
-                                    }
-                                >
-
-                                    <FiSettings />
-
-                                    <span>
-
-                                        Settings
-
-                                    </span>
-
-                                </div>
-
-                                <div className="dropdown-divider"></div>
-
-                                {/* Logout */}
-
-                                <div
-                                    className="dropdown-item logout"
-                                    onClick={handleLogout}
-                                >
-
-                                    <FiLogOut />
-
-                                    <span>
-
-                                        Logout
-
-                                    </span>
-
-                                </div>
-
-                            </div>
 
                         )}
 
                     </div>
 
-                )}
+                    {/* ========================= */}
+                    {/* Login / Account - Desktop Only */}
+                    {/* ========================= */}
 
-                {/* Mobile Menu */}
+                    {!isLoggedIn ? (
 
-                <FiMenu
-                    className="mobile-menu"
-                    onClick={() =>
-                        setMobileMenu(!mobileMenu)
-                    }
-                />
+                        <button
+                            className="login-btn desktop-only"
+                            onClick={() => navigate("/login")}
+                        >
+                            LOGIN
+                        </button>
 
-            </div>
+                    ) : (
 
-        </header>
+                        <div
+                            className="account-menu desktop-only"
+                            ref={dropdownRef}
+                        >
+
+                            <button
+                                className="account-btn"
+                                onClick={toggleDropdown}
+                                aria-expanded={showDropdown}
+                                aria-haspopup="true"
+                            >
+
+                                <div className="avatar-circle">
+
+                                    <FiUser />
+
+                                </div>
+
+                                <span>
+
+                                    My Account
+
+                                </span>
+
+                                <FiChevronDown
+                                    className={
+                                        showDropdown
+                                            ? "rotate"
+                                            : ""
+                                    }
+                                />
+
+                            </button>
+
+                            {showDropdown && (
+
+                                <div className="account-dropdown">
+
+                                    <div className="dropdown-header">
+
+                                        <div className="profile-avatar">
+
+                                            <FiUser />
+
+                                        </div>
+
+                                        <div>
+
+                                            <h4>Welcome</h4>
+
+                                            <p>
+                                                {
+                                                    localStorage.getItem(
+                                                        "email"
+                                                    )
+                                                }
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div className="dropdown-divider"></div>
+
+                                    <div
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            navigate("/profile");
+                                            setShowDropdown(false);
+                                        }}
+                                    >
+                                        <FiUser />
+                                        <span>My Profile</span>
+                                    </div>
+
+                                    <div
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            navigate("/orders");
+                                            setShowDropdown(false);
+                                        }}
+                                    >
+                                        <FiPackage />
+                                        <span>My Orders</span>
+                                    </div>
+
+                                    <div
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            navigate("/wishlist");
+                                            setShowDropdown(false);
+                                        }}
+                                    >
+                                        <FiHeart />
+                                        <span>Wishlist</span>
+                                    </div>
+
+                                    <div
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            navigate("/addresses");
+                                            setShowDropdown(false);
+                                        }}
+                                    >
+                                        <FiMapPin />
+                                        <span>My Addresses</span>
+                                    </div>
+
+                                    <div
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                            navigate("/settings");
+                                            setShowDropdown(false);
+                                        }}
+                                    >
+                                        <FiSettings />
+                                        <span>Settings</span>
+                                    </div>
+
+                                    <div className="dropdown-divider"></div>
+
+                                    <div
+                                        className="dropdown-item logout"
+                                        onClick={handleLogout}
+                                    >
+                                        <FiLogOut />
+                                        <span>Logout</span>
+                                    </div>
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+                    )}
+
+                    {/* Mobile Menu Toggle */}
+                    <FiMenu
+                        className="mobile-menu"
+                        onClick={toggleMobileMenu}
+                        aria-label="Toggle menu"
+                    />
+
+                </div>
+
+            </header>
+
+            {/* ========================= */}
+            {/* MOBILE SIDE MENU */}
+            {/* ========================= */}
+
+            <div className={`mobile-menu-overlay ${mobileMenu ? 'active' : ''}`} onClick={closeMobileMenu}></div>
+
+            <nav className={`mobile-nav ${mobileMenu ? 'active' : ''}`} ref={mobileMenuRef}>
+
+                <div className="mobile-nav-header">
+                    <div className="mobile-nav-logo">CLAYWARE</div>
+                    <button className="mobile-nav-close" onClick={closeMobileMenu}>✕</button>
+                </div>
+
+                <div className="mobile-nav-links">
+
+                    <Link 
+                        to="/" 
+                        onClick={closeMobileMenu}
+                        className={isActive("/") ? "active-link" : ""}
+                    >
+                        HOME
+                    </Link>
+
+                    <Link 
+                        to="/shop" 
+                        onClick={closeMobileMenu}
+                        className={isActive("/shop") ? "active-link" : ""}
+                    >
+                        SHOP
+                    </Link>
+
+                    <Link 
+                        to="/our-story" 
+                        onClick={closeMobileMenu}
+                        className={isActive("/our-story") ? "active-link" : ""}
+                    >
+                        OUR STORY
+                    </Link>
+
+                    <Link 
+                        to="/sell" 
+                        onClick={closeMobileMenu}
+                        className={isActive("/sell") ? "active-link" : ""}
+                    >
+                        SELL
+                    </Link>
+
+                    <div className="mobile-divider"></div>
+
+                    {isLoggedIn ? (
+                        <>
+                            <Link to="/profile" onClick={closeMobileMenu}>
+                                MY PROFILE
+                            </Link>
+                            <Link to="/orders" onClick={closeMobileMenu}>
+                                MY ORDERS
+                            </Link>
+                            <Link to="/wishlist" onClick={closeMobileMenu}>
+                                WISHLIST
+                            </Link>
+                            <Link to="/addresses" onClick={closeMobileMenu}>
+                                ADDRESSES
+                            </Link>
+                            <Link to="/settings" onClick={closeMobileMenu}>
+                                SETTINGS
+                            </Link>
+                            <div className="mobile-divider"></div>
+                            <Link 
+                                to="/login" 
+                                onClick={handleLogout}
+                                className="mobile-logout"
+                            >
+                                LOGOUT
+                            </Link>
+                        </>
+                    ) : (
+                        <>
+                            <div className="mobile-divider"></div>
+                            <Link 
+                                to="/login" 
+                                onClick={closeMobileMenu}
+                                className="mobile-login-link"
+                            >
+                                LOGIN
+                            </Link>
+                        </>
+                    )}
+
+                </div>
+
+            </nav>
+
+            {/* ========================= */}
+            {/* MOBILE BOTTOM NAVIGATION */}
+            {/* ========================= */}
+
+            <nav className="bottom-nav">
+
+                {bottomNavItems.map((item) => {
+
+                    const isActivePath = location.pathname === item.path;
+                    const Icon = item.icon;
+
+                    return (
+
+                        <button
+                            key={item.label}
+                            className={`bottom-nav-item ${isActivePath ? "active" : ""}`}
+                            onClick={() => {
+                                if (item.path === "/cart" && !isLoggedIn) {
+                                    navigate("/login");
+                                    return;
+                                }
+                                navigate(item.path);
+                            }}
+                            aria-label={item.label}
+                        >
+
+                            <div className="bottom-nav-icon-wrapper">
+                                <Icon />
+                                {item.badge && (
+                                    <span className="bottom-cart-badge">{item.badge}</span>
+                                )}
+                            </div>
+
+                            <span>{item.label}</span>
+
+                        </button>
+
+                    );
+
+                })}
+
+            </nav>
+
+        </>
 
     );
 

@@ -51,7 +51,7 @@ function AppRoutes() {
       />
 
       <Route
-        path="/order-success"
+        path="/order-success/:orderId"
         element={
           <PrivateRoute>
             <OrderSuccess />
