@@ -1,32 +1,32 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-
+import api from "../api/axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import WhyChooseUs from "../components/WhyChooseUs";
-
-import api from "../api/axios";
-
 import "./styles/ProductDetails.css";
 
 function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  // =====================================
+  // STATE MANAGEMENT
+  // =====================================
+  
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [selectedImage, setSelectedImage] = useState("");
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
-
-  const [zoomStyle, setZoomStyle] = useState({});
-  const [isZooming, setIsZooming] = useState(false);
-
   const [addingToCart, setAddingToCart] = useState(false);
-
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [activeTab, setActiveTab] = useState("description");
+  const [imageIndex, setImageIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  
   // Review states
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -38,80 +38,56 @@ function ProductDetails() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [canReview, setCanReview] = useState(false);
-  const [activeTab, setActiveTab] = useState("description");
   
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxImages, setLightboxImages] = useState([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-
+  
   // Related products
   const [relatedProducts, setRelatedProducts] = useState([]);
 
-  // =====================================
-  // MOBILE SCROLL BEHAVIOR
-  // =====================================
-  
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [scrollState, setScrollState] = useState({
-    showBottomNav: true,
-    showStickyBar: false,
-    showCompactHeader: false,
-  });
-
-  const productRef = useRef(null);
-  const heroRef = useRef(null);
+  // Refs
+  const galleryRef = useRef(null);
+  const mainImageRef = useRef(null);
   const scrollTimeout = useRef(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isStickyVisible, setIsStickyVisible] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState(false);
 
-  // Check if mobile on resize
+  // =====================================
+  // RESPONSIVE HANDLING
+  // =====================================
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Scroll handler with throttling
-  useEffect(() => {
-    if (!isMobile) return;
+  // =====================================
+  // SCROLL HANDLING FOR STICKY BAR
+  // =====================================
 
+  useEffect(() => {
     const handleScroll = () => {
       if (scrollTimeout.current) return;
-
+      
       scrollTimeout.current = setTimeout(() => {
         const scrollY = window.scrollY;
-        const heroHeight = heroRef.current?.offsetHeight || 400;
-        
-        // Thresholds
-        const stickyBarThreshold = Math.min(heroHeight * 0.3, 220);
-        const compactHeaderThreshold = Math.min(heroHeight * 0.5, 320);
-
-        // Calculate new states
-        const shouldShowStickyBar = scrollY > stickyBarThreshold;
-        const shouldShowCompactHeader = scrollY > compactHeaderThreshold;
-        const shouldShowBottomNav = !shouldShowStickyBar;
-
-        setScrollState({
-          showBottomNav: shouldShowBottomNav,
-          showStickyBar: shouldShowStickyBar,
-          showCompactHeader: shouldShowCompactHeader,
-        });
-
+        const threshold = 300;
+        setIsStickyVisible(scrollY > threshold);
         scrollTimeout.current = null;
-      }, 100); // Throttle to 100ms
+      }, 50);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
-  }, [isMobile]);
+  }, []);
 
   // =====================================
   // FETCH PRODUCT
@@ -126,7 +102,6 @@ function ProductDetails() {
         setError(null);
 
         const res = await api.get(`accounts/product/${id}/`);
-
         if (cancelled) return;
 
         const data = res.data;
@@ -154,9 +129,7 @@ function ProductDetails() {
           });
         }
 
-        // Fetch reviews
         fetchReviews(id);
-        // Fetch related products
         fetchRelatedProducts(data.category?.id || data.category);
 
       } catch (err) {
@@ -172,10 +145,7 @@ function ProductDetails() {
     };
 
     fetchProduct();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [id]);
 
   // =====================================
@@ -185,10 +155,9 @@ function ProductDetails() {
   const fetchReviews = async (productId) => {
     try {
       setReviewsLoading(true);
-      const res = await api.get(`/order/products/${productId}/reviews/`)
+      const res = await api.get(`/order/products/${productId}/reviews/`);
       setReviews(res.data);
       
-      // Check if user can review
       const token = localStorage.getItem("token");
       if (token) {
         try {
@@ -220,14 +189,10 @@ function ProductDetails() {
   };
 
   // =====================================
-  // PRODUCT IMAGES
+  // COMPUTED VALUES
   // =====================================
 
   const images = product?.product_images?.map((img) => img.image) || product?.images || [];
-
-  // =====================================
-  // STANDARD + VARIANTS
-  // =====================================
 
   const allVariants = product
     ? [
@@ -246,98 +211,121 @@ function ProductDetails() {
       ]
     : [];
 
-  // =====================================
-  // PRICE
-  // =====================================
-
   const mrp = Number(selectedVariant?.price || 0);
   const sellingPrice = selectedVariant?.discount_price && Number(selectedVariant.discount_price) < mrp
     ? Number(selectedVariant.discount_price)
     : mrp;
   const discount = mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
-
-  // =====================================
-  // STOCK STATUS - IMPROVED LOGIC
-  // =====================================
-
+  const savings = mrp - sellingPrice;
   const stock = Number(selectedVariant?.stock_quantity || 0);
   const inStock = stock > 0;
 
-  // Stock status types with professional UI
-  const getStockStatus = (stockCount) => {
-    if (stockCount === 0) {
-      return {
-        type: 'out-of-stock',
-        label: 'Out of Stock',
-        message: 'Currently unavailable',
-        action: 'Notify me when available',
-        color: '#D32F2F',
-        icon: '❌',
-        dotColor: '#BDBDBD',
-        bgColor: '#F5F5F5'
-      };
-    } else if (stockCount > 10) {
-      return {
-        type: 'plenty',
-        label: '✅ In Stock',
-        message: 'Ready to ship',
-        action: null,
-        color: '#2E7D32',
-        icon: '✅',
-        dotColor: '#4CAF50',
-        bgColor: '#E8F5E9'
-      };
-    } else if (stockCount >= 5 && stockCount <= 10) {
-      return {
-        type: 'limited',
-        label: '⚠️ Only Few Left',
-        message: 'Hurry! Selling Fast',
-        action: null,
-        color: '#F57C00',
-        icon: '⚠️',
-        dotColor: '#FF9800',
-        bgColor: '#FFF3E0'
-      };
-    } else if (stockCount >= 1 && stockCount <= 4) {
-      return {
-        type: 'very-low',
-        label: `🔥 Only ${stockCount} left in stock`,
-        message: 'Order soon!',
-        action: null,
-        color: '#D32F2F',
-        icon: '🔥',
-        dotColor: '#F44336',
-        bgColor: '#FFEBEE'
-      };
+  const reviewStats = useMemo(() => {
+    if (!reviews.length) return { average: 0, counts: [0, 0, 0, 0, 0], total: 0 };
+    const total = reviews.length;
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    const avg = sum / total;
+    const counts = [0, 0, 0, 0, 0];
+    reviews.forEach((r) => {
+      if (r.rating >= 1 && r.rating <= 5) counts[r.rating - 1]++;
+    });
+    return { average: avg, counts, total };
+  }, [reviews]);
+
+  const stockStatus = useMemo(() => {
+    if (stock === 0) {
+      return { label: 'Out of Stock', color: '#D32F2F', bgColor: '#FFEBEE', icon: '×' };
+    } else if (stock > 10) {
+      return { label: 'In Stock', color: '#2E7D32', bgColor: '#E8F5E9', icon: '✓' };
+    } else if (stock >= 5 && stock <= 10) {
+      return { label: 'Only Few Left', color: '#F57C00', bgColor: '#FFF3E0', icon: '!' };
+    } else if (stock >= 1 && stock <= 4) {
+      return { label: `Only ${stock} Left`, color: '#D32F2F', bgColor: '#FFEBEE', icon: '!' };
     }
     return null;
-  };
-
-  const stockStatus = getStockStatus(stock);
-  const isOutOfStock = stock === 0;
+  }, [stock]);
 
   // =====================================
-  // IMAGE ZOOM
+  // SHARE FUNCTION
   // =====================================
 
-  const handleMouseMove = (e) => {
-    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-    setZoomStyle({
-      transformOrigin: `${x}% ${y}%`,
-      transform: "scale(2.5)",
-    });
+  const handleShare = useCallback(async () => {
+    const shareData = {
+      title: product?.productname || 'Check out this product',
+      text: `Check out ${product?.productname || 'this product'} on ClayWare!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && window.innerWidth <= 768) {
+        await navigator.share(shareData);
+        setShareFeedback(true);
+        setTimeout(() => setShareFeedback(false), 3000);
+        return;
+      }
+
+      await navigator.clipboard.writeText(window.location.href);
+      setShareFeedback(true);
+      setTimeout(() => setShareFeedback(false), 3000);
+      alert('Link copied to clipboard!');
+      
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Share cancelled by user');
+        return;
+      }
+      
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareFeedback(true);
+        setTimeout(() => setShareFeedback(false), 3000);
+        alert('Link copied to clipboard!');
+      } catch (clipError) {
+        console.error('Share failed:', error);
+        alert(`Share this link: ${window.location.href}`);
+      }
+    }
+  }, [product]);
+
+  // =====================================
+  // IMAGE HANDLERS
+  // =====================================
+
+  const handleImageSelect = (image, index) => {
+    setSelectedImage(image);
+    setImageIndex(index);
   };
 
-  const handleMouseEnter = () => setIsZooming(true);
-  const resetZoom = () => {
-    setIsZooming(false);
-    setZoomStyle({ transform: "scale(1)" });
+  const handleThumbnailClick = (image, index) => {
+    handleImageSelect(image, index);
+  };
+
+  const handleZoom = (e) => {
+    if (!mainImageRef.current) return;
+    const rect = mainImageRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPosition({ x, y });
+  };
+
+  const toggleZoom = () => {
+    setIsZoomed(!isZoomed);
+  };
+
+  const nextImage = () => {
+    const next = (imageIndex + 1) % images.length;
+    setImageIndex(next);
+    setSelectedImage(images[next]);
+  };
+
+  const prevImage = () => {
+    const prev = (imageIndex - 1 + images.length) % images.length;
+    setImageIndex(prev);
+    setSelectedImage(images[prev]);
   };
 
   // =====================================
-  // QUANTITY
+  // QUANTITY HANDLERS
   // =====================================
 
   const decreaseQty = () => setQuantity((prev) => Math.max(1, prev - 1));
@@ -350,7 +338,7 @@ function ProductDetails() {
   }, [selectedVariant]);
 
   // =====================================
-  // ADD TO CART
+  // CART HANDLERS
   // =====================================
 
   const handleAddToCart = async () => {
@@ -377,10 +365,6 @@ function ProductDetails() {
     }
   };
 
-  // =====================================
-  // BUY NOW
-  // =====================================
-
   const handleBuyNow = () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -398,14 +382,17 @@ function ProductDetails() {
     });
   };
 
-  // =====================================
-  // VARIANT CHANGE
-  // =====================================
-
   const handleVariantChange = (variant) => {
     setSelectedVariant(variant);
     setQuantity(1);
-    if (variant.image) setSelectedImage(variant.image);
+    if (variant.image) {
+      setSelectedImage(variant.image);
+      setImageIndex(images.indexOf(variant.image));
+    }
+  };
+
+  const handleWishlistToggle = () => {
+    setIsWishlisted(!isWishlisted);
   };
 
   // =====================================
@@ -416,7 +403,6 @@ function ProductDetails() {
     const files = Array.from(e.target.files);
     const remaining = 5 - reviewImages.length;
     const validFiles = files.slice(0, remaining);
-    
     setReviewImages((prev) => [...prev, ...validFiles]);
     setReviewImagesPreview((prev) => [
       ...prev,
@@ -479,8 +465,7 @@ function ProductDetails() {
   // LIGHTBOX HANDLERS
   // =====================================
 
-  const openLightbox = (images, index) => {
-    setLightboxImages(images);
+  const openLightbox = (index) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
     document.body.style.overflow = "hidden";
@@ -491,32 +476,13 @@ function ProductDetails() {
     document.body.style.overflow = "unset";
   };
 
-  const prevImage = () => {
-    setLightboxIndex((prev) => (prev === 0 ? lightboxImages.length - 1 : prev - 1));
+  const prevLightboxImage = () => {
+    setLightboxIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
-  const nextImage = () => {
-    setLightboxIndex((prev) => (prev === lightboxImages.length - 1 ? 0 : prev + 1));
+  const nextLightboxImage = () => {
+    setLightboxIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
-
-  // =====================================
-  // COMPUTED REVIEW STATS
-  // =====================================
-
-  const reviewStats = useMemo(() => {
-    if (!reviews.length) return { average: 0, counts: [0, 0, 0, 0, 0] };
-    
-    const total = reviews.length;
-    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
-    const avg = sum / total;
-    
-    const counts = [0, 0, 0, 0, 0];
-    reviews.forEach((r) => {
-      if (r.rating >= 1 && r.rating <= 5) counts[r.rating - 1]++;
-    });
-    
-    return { average: avg, counts, total };
-  }, [reviews]);
 
   // =====================================
   // LOADING UI
@@ -571,105 +537,118 @@ function ProductDetails() {
   }
 
   // =====================================
-  // PRODUCT UI
+  // MAIN RENDER
   // =====================================
 
   return (
     <>
       <Navbar />
 
-      {/* =========================
-          COMPACT STICKY HEADER (Mobile Only)
-      ========================= */}
-      <div className={`compact-header ${scrollState.showCompactHeader && isMobile ? 'visible' : ''}`}>
-        <button className="compact-back" onClick={() => navigate(-1)}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <img 
-          src={selectedImage} 
-          alt={product.productname} 
-          className="compact-thumbnail"
-        />
-        <span className="compact-title">{product.productname}</span>
-        <span className="compact-price">₹{sellingPrice}</span>
-        <button className="compact-search" onClick={() => navigate("/shop")}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-          </svg>
-        </button>
-        <button className="compact-share" onClick={() => {
-          if (navigator.share) {
-            navigator.share({
-              title: product.productname,
-              text: `Check out ${product.productname} on ClayWare`,
-              url: window.location.href,
-            });
-          }
-        }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="product-details-container" ref={productRef}>
-        {/* =========================
-            MAIN PRODUCT SECTION
-        ========================= */}
-        <div className="product-main-layout" ref={heroRef}>
-          {/* IMAGE GALLERY */}
-          <div className="product-gallery">
+      <div className="product-details-container">
+        <div className="product-main-layout">
+          
+          {/* ============================================
+              LEFT COLUMN - IMAGE GALLERY
+          ============================================ */}
+          <div className="product-gallery" ref={galleryRef}>
             <div className="thumbnail-list">
-              {images.map((img, index) => (
+              {images.map((image, index) => (
                 <div
                   key={index}
-                  className={`thumbnail-item ${selectedImage === img ? "active" : ""}`}
-                  onClick={() => setSelectedImage(img)}
+                  className={`thumbnail-item ${selectedImage === image ? 'active' : ''}`}
+                  onClick={() => handleThumbnailClick(image, index)}
+                  role="button"
+                  tabIndex={0}
                 >
-                  <img src={img} alt={`${product.productname} view ${index + 1}`} />
+                  <img src={image} alt={`${product.productname} view ${index + 1}`} loading="lazy" />
                 </div>
               ))}
             </div>
 
             <div
               className="main-image-container"
-              onMouseMove={handleMouseMove}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={resetZoom}
+              onMouseMove={handleZoom}
+              onMouseEnter={() => setIsZoomed(true)}
+              onMouseLeave={() => setIsZoomed(false)}
+              onClick={toggleZoom}
             >
               <img
                 src={selectedImage}
                 alt={product.productname}
-                className="main-product-image"
-                style={isZooming ? zoomStyle : { transform: "scale(1)" }}
+                className={`main-product-image ${isZoomed ? 'zoomed' : ''}`}
+                style={
+                  isZoomed
+                    ? {
+                        transform: `scale(2.5)`,
+                        transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                      }
+                    : {}
+                }
               />
-              {inStock && <span className="stock-badge">In Stock</span>}
+              
+              <div className="image-counter">
+                {imageIndex + 1} / {images.length}
+              </div>
+
+              {images.length > 1 && (
+                <>
+                  <button
+                    className="image-nav image-nav-prev"
+                    onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                    aria-label="Previous image"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    className="image-nav image-nav-next"
+                    onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                    aria-label="Next image"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+
+              <div className="zoom-indicator">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <line x1="11" y1="8" x2="11" y2="14" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+                <span>Click to zoom</span>
+              </div>
+
+              {inStock && (
+                <div className="stock-badge">
+                  <span className="stock-dot"></span>
+                  In Stock
+                </div>
+              )}
             </div>
           </div>
 
-          {/* PRODUCT INFO */}
+          {/* ============================================
+              RIGHT COLUMN - PRODUCT INFO
+          ============================================ */}
           <div className="product-info">
             <div className="product-breadcrumb">
               <span>Home</span>
-              <span>›</span>
+              <span className="separator">›</span>
               <span>{product.category?.name || "Products"}</span>
-              <span>›</span>
-              <span>{product.productname}</span>
+              <span className="separator">›</span>
+              <span className="current">{product.productname}</span>
             </div>
 
             <h1 className="product-title">{product.productname}</h1>
 
             <div className="product-rating-summary">
               <div className="stars">
-                {"★".repeat(Math.round(reviewStats.average))}
-                {"☆".repeat(5 - Math.round(reviewStats.average))}
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={i < Math.round(reviewStats.average) ? 'filled' : ''}>
+                    ★
+                  </span>
+                ))}
               </div>
               <span className="rating-value">{reviewStats.average.toFixed(1)}</span>
               <span className="rating-count">({reviewStats.total} reviews)</span>
@@ -682,132 +661,74 @@ function ProductDetails() {
             </div>
 
             <div className="product-price-section">
-              <span className="current-price">₹{sellingPrice}</span>
+              <span className="current-price">₹{sellingPrice.toLocaleString()}</span>
               {mrp !== sellingPrice && (
                 <>
-                  <span className="original-price">₹{mrp}</span>
+                  <span className="original-price">₹{mrp.toLocaleString()}</span>
                   <span className="discount-badge">{discount}% OFF</span>
                 </>
               )}
             </div>
 
-            {/* =====================================
-                STOCK STATUS - PREMIUM UI
-            ===================================== */}
+            {/* Stock Status */}
             <div className="stock-status-container">
-              <div 
-                className={`stock-status ${stockStatus?.type}`}
-                style={{
-                  backgroundColor: stockStatus?.bgColor,
-                  borderColor: stockStatus?.dotColor
-                }}
-              >
-                <div className="stock-status-content">
-                  <div className="stock-status-left">
-                    <span 
-                      className="stock-dot" 
-                      style={{ backgroundColor: stockStatus?.dotColor }}
-                    ></span>
-                    <div className="stock-status-text">
-                      <span 
-                        className="stock-label" 
-                        style={{ color: stockStatus?.color }}
-                      >
-                        {stockStatus?.label}
-                      </span>
-                      <span className="stock-message">
-                        {stockStatus?.message}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {isOutOfStock && (
-                    <button 
-                      className="notify-btn"
-                      onClick={() => {
-                        alert("We'll notify you when this product is back in stock!");
-                      }}
-                    >
-                      Notify Me
-                    </button>
-                  )}
-                </div>
+              <div className={`stock-status ${stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
+                <span className="stock-dot"></span>
+                {stockStatus?.label || 'Out of Stock'}
               </div>
             </div>
 
-            {/* VARIANTS */}
+            {/* Variants */}
             {allVariants.length > 1 && (
               <div className="variant-section">
                 <h3 className="variant-label">Select Capacity</h3>
                 <div className="variant-options">
-                  {allVariants.map((variant) => (
-                    <button
-                      key={variant.id || "standard"}
-                      className={`variant-option ${
-                        selectedVariant?.id === variant.id &&
-                        selectedVariant?.isBase === variant.isBase
-                          ? "selected"
-                          : ""
-                      }`}
-                      disabled={Number(variant.stock_quantity) <= 0}
-                      onClick={() => handleVariantChange(variant)}
-                    >
-                      {variant.capacity}
-                    </button>
-                  ))}
+                  {allVariants.map((variant) => {
+                    const isSelected = selectedVariant?.id === variant.id && selectedVariant?.isBase === variant.isBase;
+                    const isAvailable = Number(variant.stock_quantity) > 0;
+                    return (
+                      <button
+                        key={variant.id || "standard"}
+                        className={`variant-option ${isSelected ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
+                        disabled={!isAvailable}
+                        onClick={() => handleVariantChange(variant)}
+                      >
+                        {variant.capacity}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* QUANTITY - Updated with stock info */}
+            {/* Quantity */}
             <div className="quantity-section">
               <label className="quantity-label">Quantity</label>
               <div className="quantity-controls">
-                <button 
-                  onClick={decreaseQty} 
-                  disabled={quantity <= 1 || isOutOfStock}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 12h14" />
-                  </svg>
+                <button onClick={decreaseQty} disabled={quantity <= 1 || !inStock}>
+                  −
                 </button>
                 <span className="quantity-value">{quantity}</span>
-                <button 
-                  onClick={increaseQty} 
-                  disabled={quantity >= stock || isOutOfStock}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
+                <button onClick={increaseQty} disabled={quantity >= stock || !inStock}>
+                  +
                 </button>
               </div>
-              {!isOutOfStock && (
+              {inStock && (
                 <span className="stock-available">
-                  {stock > 10 ? `${stock} available` : `${stock} left`}
+                  {stock > 10 ? `${stock} available` : `Only ${stock} left`}
                 </span>
               )}
             </div>
 
-            {/* ACTION BUTTONS - Updated with disabled states */}
+            {/* Action Buttons */}
             <div className="action-buttons">
               <button
                 className="add-to-cart-btn"
                 onClick={handleAddToCart}
-                disabled={isOutOfStock || addingToCart}
-                style={{
-                  opacity: isOutOfStock ? '0.5' : '1',
-                  cursor: isOutOfStock ? 'not-allowed' : 'pointer'
-                }}
+                disabled={!inStock || addingToCart}
               >
                 {addingToCart ? (
                   <span className="btn-loader"></span>
-                ) : isOutOfStock ? (
-                  <>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />
-                    </svg>
-                    Out of Stock
-                  </>
                 ) : (
                   <>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -820,30 +741,35 @@ function ProductDetails() {
               <button
                 className="buy-now-btn"
                 onClick={handleBuyNow}
-                disabled={isOutOfStock}
-                style={{
-                  opacity: isOutOfStock ? '0.5' : '1',
-                  cursor: isOutOfStock ? 'not-allowed' : 'pointer'
-                }}
+                disabled={!inStock}
               >
-                {isOutOfStock ? 'Unavailable' : 'Buy Now'}
+                Buy Now
               </button>
-              <button 
-                className="wishlist-btn" 
+              <button
+                className="wishlist-btn"
+                onClick={handleWishlistToggle}
                 aria-label="Add to wishlist"
-                disabled={isOutOfStock}
-                style={{
-                  opacity: isOutOfStock ? '0.4' : '1',
-                  cursor: isOutOfStock ? 'not-allowed' : 'pointer'
-                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill={isWishlisted ? "#C8622A" : "none"} stroke="currentColor" strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                </svg>
+              </button>
+              <button
+                className="share-btn"
+                onClick={handleShare}
+                aria-label="Share product"
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                 </svg>
               </button>
             </div>
 
-            {/* DELIVERY INFO */}
+            {/* Delivery Info */}
             <div className="delivery-info">
               <div className="delivery-item">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8622A" strokeWidth="2">
@@ -879,21 +805,39 @@ function ProductDetails() {
           </div>
         </div>
 
-        {/* =========================
+        {/* ============================================
             PRODUCT HIGHLIGHTS
-        ========================= */}
+        ============================================ */}
         <div className="product-highlights">
-          {["Handmade", "Premium Clay", "Food Safe", "Eco Friendly", "Natural Materials", "Reusable"].map((highlight, i) => (
-            <div key={i} className="highlight-item">
-              <span className="highlight-icon">✓</span>
-              <span className="highlight-text">{highlight}</span>
-            </div>
-          ))}
+          <div className="highlight-item">
+            <span className="highlight-icon">✋</span>
+            <span className="highlight-text">Handmade</span>
+          </div>
+          <div className="highlight-item">
+            <span className="highlight-icon">🏺</span>
+            <span className="highlight-text">Premium Clay</span>
+          </div>
+          <div className="highlight-item">
+            <span className="highlight-icon">🍽️</span>
+            <span className="highlight-text">Food Safe</span>
+          </div>
+          <div className="highlight-item">
+            <span className="highlight-icon">🌿</span>
+            <span className="highlight-text">Eco Friendly</span>
+          </div>
+          <div className="highlight-item">
+            <span className="highlight-icon">🧱</span>
+            <span className="highlight-text">Natural Materials</span>
+          </div>
+          <div className="highlight-item">
+            <span className="highlight-icon">♻️</span>
+            <span className="highlight-text">Reusable</span>
+          </div>
         </div>
 
-        {/* =========================
+        {/* ============================================
             TABS SECTION
-        ========================= */}
+        ============================================ */}
         <div className="product-tabs-section">
           <div className="tabs-header">
             <button
@@ -917,9 +861,9 @@ function ProductDetails() {
           </div>
 
           <div className="tab-content">
-            {/* DESCRIPTION */}
+            {/* Description */}
             {activeTab === "description" && (
-              <div className="tab-pane fade-in">
+              <div className="tab-pane">
                 <p className="product-description-text">{product.description}</p>
                 {product.material && (
                   <div className="product-meta">
@@ -931,16 +875,16 @@ function ProductDetails() {
               </div>
             )}
 
-            {/* SPECIFICATIONS */}
+            {/* Specifications */}
             {activeTab === "specifications" && (
-              <div className="tab-pane fade-in">
+              <div className="tab-pane">
                 <table className="specs-table">
                   <tbody>
                     <tr><td>Product Name</td><td>{product.productname}</td></tr>
                     {product.material && <tr><td>Material</td><td>{product.material}</td></tr>}
                     {product.category?.name && <tr><td>Category</td><td>{product.category.name}</td></tr>}
-                    <tr><td>Price</td><td>₹{sellingPrice}</td></tr>
-                    {mrp !== sellingPrice && <tr><td>Original Price</td><td>₹{mrp}</td></tr>}
+                    <tr><td>Price</td><td>₹{sellingPrice.toLocaleString()}</td></tr>
+                    {mrp !== sellingPrice && <tr><td>Original Price</td><td>₹{mrp.toLocaleString()}</td></tr>}
                     <tr><td>Stock</td><td>{stockStatus?.label || 'Out of Stock'}</td></tr>
                     {product.weight && <tr><td>Weight</td><td>{product.weight}</td></tr>}
                     {product.color && <tr><td>Color</td><td>{product.color}</td></tr>}
@@ -952,17 +896,20 @@ function ProductDetails() {
               </div>
             )}
 
-            {/* REVIEWS */}
+            {/* Reviews */}
             {activeTab === "reviews" && (
-              <div className="tab-pane fade-in">
+              <div className="tab-pane">
                 <div className="reviews-section">
                   {/* Review Summary */}
                   <div className="reviews-summary">
                     <div className="summary-rating">
                       <span className="average-rating">{reviewStats.average.toFixed(1)}</span>
                       <div className="stars-large">
-                        {"★".repeat(Math.round(reviewStats.average))}
-                        {"☆".repeat(5 - Math.round(reviewStats.average))}
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} className={i < Math.round(reviewStats.average) ? 'star filled' : 'star'}>
+                            ★
+                          </span>
+                        ))}
                       </div>
                       <span className="total-reviews">{reviewStats.total} reviews</span>
                     </div>
@@ -995,8 +942,9 @@ function ProductDetails() {
                               <button
                                 key={star}
                                 type="button"
-                                className={`star-btn ${reviewRating >= star ? "active" : ""}`}
+                                className={`star-btn ${reviewRating >= star ? 'active' : ''}`}
                                 onClick={() => setReviewRating(star)}
+                                aria-label={`Rate ${star} stars`}
                               >
                                 ★
                               </button>
@@ -1074,13 +1022,9 @@ function ProductDetails() {
                   {/* Reviews List */}
                   <div className="reviews-list">
                     {reviewsLoading ? (
-                      <div className="reviews-loading">
-                        Loading reviews...
-                      </div>
+                      <div className="reviews-loading">Loading reviews...</div>
                     ) : reviews.length === 0 ? (
-                      <div className="no-reviews">
-                        No reviews yet.
-                      </div>
+                      <div className="no-reviews">No reviews yet.</div>
                     ) : (
                       reviews.map((review) => (
                         <div key={review.id} className="review-card">
@@ -1098,14 +1042,17 @@ function ProductDetails() {
                                 </div>
                               )}
                               <div>
-                                <h4>{review.user_name || "Anonymous"}</h4>
-                                <small>{new Date(review.created_at).toLocaleDateString()}</small>
+                                <h4 className="reviewer-name">{review.user_name || "Anonymous"}</h4>
+                                <span className="review-date">{new Date(review.created_at).toLocaleDateString()}</span>
                               </div>
                             </div>
                           </div>
                           <div className="review-stars">
-                            {"★".repeat(review.rating)}
-                            {"☆".repeat(5 - review.rating)}
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={i < review.rating ? 'star filled' : 'star'}>
+                                ★
+                              </span>
+                            ))}
                           </div>
                           <p className="review-text">{review.review}</p>
                         </div>
@@ -1118,23 +1065,34 @@ function ProductDetails() {
           </div>
         </div>
 
-        {/* =========================
+        {/* ============================================
             RELATED PRODUCTS
-        ========================= */}
+        ============================================ */}
         {relatedProducts.length > 0 && (
           <div className="related-products">
             <h2 className="section-title">You May Also Like</h2>
             <div className="related-grid">
-              {relatedProducts.map((item) => (
+              {relatedProducts.slice(0, 6).map((item) => (
                 <div
                   key={item.id}
                   className="related-card"
                   onClick={() => navigate(`/product/${item.id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      navigate(`/product/${item.id}`);
+                    }
+                  }}
                 >
                   <div className="related-image">
                     <img
                       src={item.images?.[0] || item.product_images?.[0]?.image || "/placeholder.jpg"}
                       alt={item.productname}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src = "/placeholder.jpg";
+                      }}
                     />
                     {item.discount_price && Number(item.discount_price) < Number(item.price) && (
                       <span className="related-discount">
@@ -1144,9 +1102,13 @@ function ProductDetails() {
                   </div>
                   <h3 className="related-name">{item.productname}</h3>
                   <div className="related-price">
-                    <span className="related-current">₹{item.discount_price || item.price}</span>
+                    <span className="related-current">
+                      ₹{Number(item.discount_price || item.price).toLocaleString()}
+                    </span>
                     {item.price && item.discount_price && Number(item.discount_price) < Number(item.price) && (
-                      <span className="related-original">₹{item.price}</span>
+                      <span className="related-original">
+                        ₹{Number(item.price).toLocaleString()}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -1156,54 +1118,79 @@ function ProductDetails() {
         )}
       </div>
 
-      {/* =========================
-          LIGHTBOX MODAL
-      ========================= */}
+      {/* ============================================
+          MOBILE STICKY BAR
+      ============================================ */}
+      <div className={`mobile-sticky-bar ${isStickyVisible ? 'visible' : ''}`}>
+        <div className="sticky-left">
+          <div className="sticky-price-info">
+            <span className="sticky-price">₹{sellingPrice.toLocaleString()}</span>
+            {discount > 0 && (
+              <span className="sticky-discount">{discount}% OFF</span>
+            )}
+          </div>
+          <button
+            className="sticky-share-btn"
+            onClick={handleShare}
+            aria-label="Share product"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          </button>
+        </div>
+        <div className="sticky-actions">
+          <button
+            className="sticky-add-to-cart"
+            onClick={handleAddToCart}
+            disabled={!inStock || addingToCart}
+          >
+            {addingToCart ? <span className="btn-loader"></span> : "Add to Cart"}
+          </button>
+          <button
+            className="sticky-buy"
+            onClick={handleBuyNow}
+            disabled={!inStock}
+          >
+            Buy Now
+          </button>
+        </div>
+      </div>
+
+      {/* ============================================
+          LIGHTBOX
+      ============================================ */}
       {lightboxOpen && (
         <div className="lightbox-modal" onClick={closeLightbox}>
           <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
             <button className="lightbox-close" onClick={closeLightbox}>✕</button>
-            <button className="lightbox-prev" onClick={prevImage}>‹</button>
+            <button className="lightbox-prev" onClick={prevLightboxImage}>‹</button>
             <img
-              src={lightboxImages[lightboxIndex]}
-              alt={`Review ${lightboxIndex + 1}`}
+              src={images[lightboxIndex]}
+              alt={`Product ${lightboxIndex + 1}`}
               className="lightbox-image"
             />
-            <button className="lightbox-next" onClick={nextImage}>›</button>
-            <span className="lightbox-counter">{lightboxIndex + 1} / {lightboxImages.length}</span>
+            <button className="lightbox-next" onClick={nextLightboxImage}>›</button>
+            <span className="lightbox-counter">{lightboxIndex + 1} / {images.length}</span>
           </div>
         </div>
       )}
 
-      {/* =========================
-          MOBILE STICKY BAR - Updated with Scroll Behavior
-      ========================= */}
-      <div className={`mobile-sticky-bar ${scrollState.showStickyBar && isMobile ? 'visible' : ''}`}>
-        <div className="sticky-price">₹{sellingPrice}</div>
-        <div className="sticky-actions">
-          <button 
-            onClick={handleAddToCart} 
-            disabled={isOutOfStock || addingToCart}
-            style={{
-              opacity: isOutOfStock ? '0.5' : '1',
-              cursor: isOutOfStock ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {addingToCart ? "..." : isOutOfStock ? "Out of Stock" : "Add to Cart"}
-          </button>
-          <button 
-            className="sticky-buy" 
-            onClick={handleBuyNow} 
-            disabled={isOutOfStock}
-            style={{
-              opacity: isOutOfStock ? '0.5' : '1',
-              cursor: isOutOfStock ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {isOutOfStock ? "Unavailable" : "Buy Now"}
-          </button>
+      {/* ============================================
+          SHARE FEEDBACK TOAST
+      ============================================ */}
+      {shareFeedback && (
+        <div className="share-toast">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          <span>Link copied to clipboard!</span>
         </div>
-      </div>
+      )}
 
       <WhyChooseUs />
       <Footer />

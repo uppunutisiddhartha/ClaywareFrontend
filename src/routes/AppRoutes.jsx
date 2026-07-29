@@ -6,6 +6,7 @@ import ShopPage from "../pages/ShopPage";
 import ProductDetails from "../pages/ProductDetails";
 import Cart from "../pages/Cart";
 import Checkout from "../pages/Checkout";
+import OrderDetails from "../pages/OrderDetails";
 import OrderSuccess from "../pages/OrderSuccess";
 import Orders from "../pages/Orders";
 import UserRegister from "../pages/registerpages/userregister";
@@ -59,18 +60,24 @@ function AppRoutes() {
         }
       />
       <Route
-  path="/orders"
-  element={
-    <PrivateRoute>
-      <Orders />
-    </PrivateRoute>
-  }
-/>
-
+        path="/orders"
+        element={
+          <PrivateRoute>
+            <Orders />
+          </PrivateRoute>
+        }
+      />
 
       <Route path="/register" element={<UserRegister />} />
-      {/* <Route path="/seller-register" element={<SellerRegister />} />
-      <Route path="/delivery-register" element={<DeliveryAgentRegister />} /> */}
+      
+      <Route
+        path="/orders/:orderId"
+        element={
+          <PrivateRoute>
+            <OrderDetails />
+          </PrivateRoute>
+        }
+      />
     </Routes>
   );
 }

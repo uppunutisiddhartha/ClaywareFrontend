@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import Navbar from "../components/Navbar";
@@ -13,18 +13,112 @@ import {
     FiChevronRight,
     FiCalendar,
     FiClock,
+    FiFilter,
+    FiX,
+    FiArrowUp,
+    FiArrowDown,
+    FiTruck,
+    FiCheckCircle,
+    FiClock as FiClock2,
+    FiAlertCircle,
+    FiBox,
+    FiStar,
+    FiHeart,
 } from "react-icons/fi";
 
+// ============================================
+// SUBCOMPONENTS
+// ============================================
+
+// ---- Loading Skeleton ----
+const OrdersSkeleton = () => (
+    <div className="orders-page">
+        <div className="orders-container">
+            <div className="orders-skeleton-header">
+                <div className="skeleton-line" style={{ width: "200px", height: "36px" }} />
+                <div className="skeleton-line" style={{ width: "400px", height: "48px" }} />
+            </div>
+            <div className="orders-skeleton-filters">
+                <div className="skeleton-line" style={{ width: "300px", height: "44px" }} />
+                <div className="skeleton-line" style={{ width: "200px", height: "44px" }} />
+            </div>
+            <div className="orders-skeleton-list">
+                {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="skeleton-order-card">
+                        <div className="skeleton-thumb" />
+                        <div className="skeleton-content">
+                            <div className="skeleton-line" style={{ width: "60%" }} />
+                            <div className="skeleton-line" style={{ width: "40%" }} />
+                            <div className="skeleton-line" style={{ width: "30%" }} />
+                        </div>
+                        <div className="skeleton-meta">
+                            <div className="skeleton-line" style={{ width: "80px" }} />
+                            <div className="skeleton-line" style={{ width: "60px" }} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// ---- Empty State ----
+const EmptyState = ({ onShop }) => (
+    <div className="orders-empty-state">
+        <div className="empty-icon">
+            <FiShoppingBag />
+        </div>
+        <h2>No Orders Yet</h2>
+        <p>Start exploring our beautiful handcrafted clay products</p>
+        <button onClick={onShop} className="btn-primary">
+            Start Shopping
+        </button>
+    </div>
+);
+
+// ---- No Results ----
+const NoResults = ({ onClearFilters }) => (
+    <div className="orders-no-results">
+        <FiSearch size={48} />
+        <h3>No orders found</h3>
+        <p>Try adjusting your filters or search term</p>
+        <button onClick={onClearFilters} className="btn-outline">
+            Clear All Filters
+        </button>
+    </div>
+);
+
+// ---- Status Badge ----
+const StatusBadge = ({ status }) => {
+    const configs = {
+        DELIVERED: { label: "Delivered", icon: FiCheckCircle, class: "delivered" },
+        OUT_FOR_DELIVERY: { label: "Out for Delivery", icon: FiTruck, class: "shipping" },
+        PACKED: { label: "Packed", icon: FiBox, class: "packed" },
+        PLACED: { label: "Placed", icon: FiClock2, class: "placed" },
+        CANCELLED: { label: "Cancelled", icon: FiX, class: "cancelled" },
+    };
+    const config = configs[status] || { label: status, icon: FiAlertCircle, class: "" };
+    const Icon = config.icon;
+
+    return (
+        <span className={`status-badge ${config.class}`}>
+            <Icon size={12} />
+            {config.label}
+        </span>
+    );
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 function Orders() {
     const navigate = useNavigate();
-
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    // UI filter states
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("All");
-    const [sortBy, setSortBy] = useState("Newest");
+    const [sortBy, setSortBy] = useState("newest");
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         fetchOrders();
@@ -43,333 +137,315 @@ function Orders() {
         }
     };
 
-    /* -----------------------------------
-       Order Status Helpers
-    ----------------------------------- */
-    const getStatusDisplay = (status) => {
-        return status.replaceAll("_", " ");
-    };
+    // ---- Helper Functions ----
+    const getStatusDisplay = (status) => status.replaceAll("_", " ");
 
-    const getStatusDot = (status) => {
-        switch (status) {
-            case "DELIVERED":
-                return "dot delivered";
-            case "OUT_FOR_DELIVERY":
-                return "dot shipping";
-            case "PACKED":
-                return "dot packed";
-            case "PLACED":
-                return "dot placed";
-            case "CANCELLED":
-                return "dot cancelled";
-            default:
-                return "dot";
+    // ---- Stats ----
+    const stats = useMemo(() => {
+        const total = orders.length;
+        const delivered = orders.filter((o) => o.status === "DELIVERED").length;
+        const processing = orders.filter(
+            (o) => o.status === "PLACED" || o.status === "PACKED" || o.status === "OUT_FOR_DELIVERY"
+        ).length;
+        const cancelled = orders.filter((o) => o.status === "CANCELLED").length;
+        return { total, delivered, processing, cancelled };
+    }, [orders]);
+
+    // ---- Filter & Sort ----
+    const filteredOrders = useMemo(() => {
+        let result = [...orders];
+
+        // Filter by status
+        if (filterStatus !== "All") {
+            result = result.filter((o) => o.status === filterStatus);
         }
-    };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case "DELIVERED":
-                return "#0d6b3f";
-            case "OUT_FOR_DELIVERY":
-                return "#1a6a9e";
-            case "PACKED":
-                return "#b45f1a";
-            case "PLACED":
-                return "#5e3a9e";
-            case "CANCELLED":
-                return "#b33c3c";
-            default:
-                return "#6e665e";
+        // Filter by search
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            result = result.filter(
+                (o) =>
+                    o.order_id.toString().includes(term) ||
+                    o.items.some((item) => item.product_name.toLowerCase().includes(term))
+            );
         }
-    };
 
-    /* -----------------------------------
-       Calculate stats
-    ----------------------------------- */
-    const totalOrders = orders.length;
-    const delivered = orders.filter((o) => o.status === "DELIVERED").length;
-    const processing = orders.filter(
-        (o) => o.status === "PLACED" || o.status === "PACKED" || o.status === "OUT_FOR_DELIVERY"
-    ).length;
-    const cancelled = orders.filter((o) => o.status === "CANCELLED").length;
+        // Sort
+        switch (sortBy) {
+            case "newest":
+                result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                break;
+            case "oldest":
+                result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                break;
+            case "price-high":
+                result.sort((a, b) => Number(b.total_price) - Number(a.total_price));
+                break;
+            case "price-low":
+                result.sort((a, b) => Number(a.total_price) - Number(b.total_price));
+                break;
+            default:
+                break;
+        }
 
-    /* -----------------------------------
-       Navigate to Order Details
-    ----------------------------------- */
+        return result;
+    }, [orders, filterStatus, searchTerm, sortBy]);
+
     const handleOrderClick = (orderId) => {
         navigate(`/orders/${orderId}`);
     };
 
-    /* -----------------------------------
-       Loading State
-    ----------------------------------- */
-    if (loading) {
-        return (
-            <div className="orders-page">
-                <Navbar />
-                <div className="orders-header">
-                    <h1>
-                        <FiPackage />
-                        My Orders
-                    </h1>
-                    <p>Loading your orders...</p>
-                </div>
-                <div className="orders-loading">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="skeleton-order">
-                            <div className="skeleton-thumb"></div>
-                            <div style={{ flex: 1 }}>
-                                <div className="skeleton-line" style={{ width: "60%" }}></div>
-                                <div
-                                    className="skeleton-line"
-                                    style={{ width: "40%", marginTop: "8px" }}
-                                ></div>
-                                <div
-                                    className="skeleton-line short"
-                                    style={{ marginTop: "8px" }}
-                                ></div>
-                            </div>
-                            <div style={{ minWidth: "80px" }}>
-                                <div className="skeleton-line short"></div>
-                                <div
-                                    className="skeleton-line"
-                                    style={{ width: "60%", marginTop: "8px" }}
-                                ></div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <Footer />
-            </div>
-        );
-    }
+    const clearFilters = () => {
+        setSearchTerm("");
+        setFilterStatus("All");
+        setSortBy("newest");
+    };
 
-    /* -----------------------------------
-       Empty State
-    ----------------------------------- */
-    if (orders.length === 0) {
-        return (
-            <div className="orders-page">
-                <Navbar />
-                <div className="orders-empty">
-                    <FiShoppingBag />
-                    <h2>No Orders Yet</h2>
-                    <p>Start exploring beautiful handcrafted clay products.</p>
-                    <button onClick={() => navigate("/shop")}>Continue Shopping</button>
-                </div>
-                <Footer />
-            </div>
-        );
-    }
+    const handleShop = () => navigate("/shop");
 
-    /* -----------------------------------
-       Filter & Sort Orders
-    ----------------------------------- */
-    let filteredOrders = [...orders];
+    if (loading) return <OrdersSkeleton />;
+    if (orders.length === 0) return <EmptyState onShop={handleShop} />;
 
-    if (filterStatus !== "All") {
-        filteredOrders = filteredOrders.filter((o) => o.status === filterStatus);
-    }
-
-    if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        filteredOrders = filteredOrders.filter(
-            (o) =>
-                o.order_id.toString().includes(term) ||
-                o.items.some((item) => item.product_name.toLowerCase().includes(term)) ||
-                new Date(o.created_at).toLocaleDateString().includes(term)
-        );
-    }
-
-    // Sort
-    switch (sortBy) {
-        case "Newest":
-            filteredOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            break;
-        case "Oldest":
-            filteredOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            break;
-        case "Price High-Low":
-            filteredOrders.sort((a, b) => Number(b.total_price) - Number(a.total_price));
-            break;
-        case "Price Low-High":
-            filteredOrders.sort((a, b) => Number(a.total_price) - Number(b.total_price));
-            break;
-        default:
-            break;
-    }
-
-    /* -----------------------------------
-       Main Render
-    ----------------------------------- */
     return (
         <div className="orders-page">
             <Navbar />
 
-            {/* ==========================
-                HEADER
-            ========================== */}
-            <div className="orders-header">
-                <div>
-                    <h1>
-                        <FiPackage />
-                        My Orders
-                    </h1>
-                    <p>
-                        {filteredOrders.length} Order{filteredOrders.length > 1 ? "s" : ""}
-                        {filteredOrders.length !== orders.length
-                            ? ` (${orders.length} total)`
-                            : ""}
-                    </p>
-                </div>
+            <div className="orders-container">
+                {/* ===== HEADER ===== */}
+                <header className="orders-header">
+                    <div className="orders-header-left">
+                        <h1>
+                            <FiPackage />
+                            My Orders
+                        </h1>
+                        <span className="orders-count">
+                            {filteredOrders.length} {filteredOrders.length === 1 ? "order" : "orders"}
+                            {filteredOrders.length !== orders.length && (
+                                <span className="orders-total"> of {orders.length}</span>
+                            )}
+                        </span>
+                    </div>
 
-                <div className="stats-bar">
-                    <div className="stat">
-                        Total <span>{totalOrders}</span>
+                    <div className="orders-stats">
+                        <div className="stat-item">
+                            <span className="stat-label">Total</span>
+                            <span className="stat-value">{stats.total}</span>
+                        </div>
+                        <div className="stat-item delivered">
+                            <span className="stat-label">Delivered</span>
+                            <span className="stat-value">{stats.delivered}</span>
+                        </div>
+                        <div className="stat-item processing">
+                            <span className="stat-label">Processing</span>
+                            <span className="stat-value">{stats.processing}</span>
+                        </div>
+                        <div className="stat-item cancelled">
+                            <span className="stat-label">Cancelled</span>
+                            <span className="stat-value">{stats.cancelled}</span>
+                        </div>
                     </div>
-                    <div className="stat">
-                        Delivered <span className="clay-num">{delivered}</span>
-                    </div>
-                    <div className="stat">
-                        Processing <span>{processing}</span>
-                    </div>
-                    <div className="stat">
-                        Cancelled <span>{cancelled}</span>
-                    </div>
-                </div>
-            </div>
+                </header>
 
-            {/* ==========================
-                SEARCH & FILTER
-            ========================== */}
-            <div className="search-filter-row">
-                <div className="search-box-compact">
-                    <FiSearch />
-                    <input
-                        type="text"
-                        placeholder="Search orders..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        aria-label="Search orders"
-                    />
-                </div>
+                {/* ===== FILTERS ===== */}
+                <div className="orders-filters">
+                    <div className="filters-top">
+                        <div className="search-box">
+                            <FiSearch />
+                            <input
+                                type="text"
+                                placeholder="Search orders by ID or product..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                aria-label="Search orders"
+                            />
+                            {searchTerm && (
+                                <button
+                                    className="search-clear"
+                                    onClick={() => setSearchTerm("")}
+                                    aria-label="Clear search"
+                                >
+                                    <FiX size={16} />
+                                </button>
+                            )}
+                        </div>
 
-                <div className="filter-chips">
-                    {["All", "PLACED", "PACKED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"].map(
-                        (status) => (
-                            <button
-                                key={status}
-                                className={`filter-chip ${
-                                    filterStatus === status ? "active" : ""
-                                }`}
-                                onClick={() => setFilterStatus(status)}
-                                aria-label={`Filter by ${status}`}
+                        <button
+                            className="filter-toggle"
+                            onClick={() => setShowFilters(!showFilters)}
+                            aria-expanded={showFilters}
+                        >
+                            <FiFilter size={18} />
+                            <span>Filters</span>
+                            <span className="filter-count">
+                                {filterStatus !== "All" ? 1 : 0}
+                            </span>
+                        </button>
+                    </div>
+
+                    <div className={`filters-bottom ${showFilters ? "expanded" : ""}`}>
+                        <div className="filter-group">
+                            <span className="filter-label">Status</span>
+                            <div className="filter-chips">
+                                {["All", "PLACED", "PACKED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"].map(
+                                    (status) => (
+                                        <button
+                                            key={status}
+                                            className={`filter-chip ${filterStatus === status ? "active" : ""}`}
+                                            onClick={() => setFilterStatus(status)}
+                                            aria-label={`Filter by ${status}`}
+                                        >
+                                            {status === "All" ? "All" : getStatusDisplay(status)}
+                                        </button>
+                                    )
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="filter-group sort-group">
+                            <span className="filter-label">Sort by</span>
+                            <select
+                                className="sort-select"
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                aria-label="Sort orders"
                             >
-                                {status === "All" ? "All" : getStatusDisplay(status)}
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="price-high">Price: High to Low</option>
+                                <option value="price-low">Price: Low to High</option>
+                            </select>
+                        </div>
+
+                        {(searchTerm || filterStatus !== "All") && (
+                            <button className="clear-filters" onClick={clearFilters}>
+                                <FiX size={14} />
+                                Clear Filters
                             </button>
-                        )
+                        )}
+                    </div>
+                </div>
+
+                {/* ===== ORDERS LIST ===== */}
+                <div className="orders-list">
+                    {filteredOrders.map((order) => {
+                        const firstItem = order.items[0];
+                        const remainingCount = order.items.length - 1;
+                        const isDelivered = order.status === "DELIVERED";
+
+                        return (
+                            <div
+                                key={order.order_id}
+                                className="order-card"
+                                onClick={() => handleOrderClick(order.order_id)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        handleOrderClick(order.order_id);
+                                    }
+                                }}
+                                aria-label={`Order #${order.order_id}`}
+                            >
+                                <div className="order-card-left">
+                                    <div className="order-thumb">
+                                        {firstItem?.image ? (
+                                            <img src={firstItem.image} alt={firstItem.product_name} />
+                                        ) : (
+                                            <FiPackage />
+                                        )}
+                                    </div>
+
+                                    <div className="order-info">
+                                        <div className="order-info-top">
+                                            <h3 className="order-product-name">
+                                                {firstItem?.product_name || "Product"}
+                                            </h3>
+                                            <StatusBadge status={order.status} />
+                                        </div>
+                                        <div className="order-details">
+                                            <span className="order-variant">
+                                                {firstItem?.variant || ""}
+                                            </span>
+                                            <span className="order-separator">•</span>
+                                            <span className="order-quantity">
+                                                Qty: {firstItem?.quantity || 0}
+                                            </span>
+                                            <span className="order-separator">•</span>
+                                            <span className="order-price">
+                                                ₹{firstItem?.price || 0}
+                                            </span>
+                                        </div>
+                                        {remainingCount > 0 && (
+                                            <span className="order-more">
+                                                +{remainingCount} more {remainingCount === 1 ? "item" : "items"}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="order-card-right">
+                                    <div className="order-meta">
+                                        <div className="order-id">
+                                            <span className="meta-label">Order #</span>
+                                            <span className="meta-value">{order.order_id}</span>
+                                        </div>
+                                        <div className="order-date">
+                                            <FiCalendar size={14} />
+                                            {new Date(order.created_at).toLocaleDateString("en-IN", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                        </div>
+                                        <div className="order-total">
+                                            <span className="meta-label">Total</span>
+                                            <span className="meta-value">₹{order.total_price}</span>
+                                        </div>
+                                    </div>
+                                    <FiChevronRight className="order-arrow" />
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {filteredOrders.length === 0 && (
+                        <NoResults onClearFilters={clearFilters} />
                     )}
                 </div>
 
-                <select
-                    className="sort-select-compact"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    aria-label="Sort orders"
-                >
-                    <option value="Newest">Newest</option>
-                    <option value="Oldest">Oldest</option>
-                    <option value="Price High-Low">Price: High-Low</option>
-                    <option value="Price Low-High">Price: Low-High</option>
-                </select>
-            </div>
-
-            {/* ==========================
-                ORDERS LIST
-            ========================== */}
-            <div className="orders-list">
-                {filteredOrders.map((order) => {
-                    const firstItem = order.items[0];
-                    const remainingCount = order.items.length - 1;
-
-                    return (
-                        <div
-                            key={order.order_id}
-                            className="order-card-compact"
-                            onClick={() => handleOrderClick(order.order_id)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    handleOrderClick(order.order_id);
-                                }
-                            }}
-                            aria-label={`Order #${order.order_id}`}
-                        >
-                            <div className="order-main">
-                                {/* Product Image */}
-                                <div className="product-thumb">
-                                    {firstItem?.image ? (
-                                        <img src={firstItem.image} alt={firstItem.product_name} />
-                                    ) : (
-                                        <FiPackage />
-                                    )}
-                                </div>
-
-                                {/* Product Info */}
-                                <div className="product-info">
-                                    <h3>{firstItem?.product_name || "Product"}</h3>
-                                    <div className="variant">{firstItem?.variant || ""}</div>
-                                    <div className="qty-price">
-                                        <span>Qty {firstItem?.quantity || 0}</span>
-                                        <span className="price">₹{firstItem?.price || 0}</span>
-                                    </div>
-                                    {remainingCount > 0 && (
-                                        <span className="more-products-badge">
-                                            +{remainingCount} more product
-                                            {remainingCount > 1 ? "s" : ""}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Order Meta */}
-                            <div className="order-meta-compact">
-                                <div className="status-indicator">
-                                    <span className={getStatusDot(order.status)}></span>
-                                    {getStatusDisplay(order.status)}
-                                </div>
-                                <div className="delivery-date">
-                                    <FiCalendar style={{ display: "inline", marginRight: "4px" }} />
-                                    {order.expected_delivery || "Delivery pending"}
-                                </div>
-                                <div className="order-total">₹{order.total_price}</div>
-                                <FiChevronRight className="arrow-icon" />
-                            </div>
+                {/* ===== RECOMMENDED ===== */}
+                <section className="orders-recommended">
+                    <h2 className="recommended-title">
+                        <FiHeart />
+                        You might also like
+                    </h2>
+                    <div className="recommended-grid">
+                        <div className="recommended-item">
+                            <div className="recommended-image" />
+                            <h4>Terracotta Water Bottle</h4>
+                            <div className="recommended-price">₹699</div>
+                            <button className="btn-sm btn-primary">View</button>
                         </div>
-                    );
-                })}
-
-                {filteredOrders.length === 0 && (
-                    <div className="orders-empty" style={{ padding: "40px 20px", minHeight: "auto" }}>
-                        <p style={{ color: "#6e665e" }}>No orders match your filters.</p>
-                        <button
-                            onClick={() => {
-                                setSearchTerm("");
-                                setFilterStatus("All");
-                            }}
-                            style={{ marginTop: "16px", padding: "10px 32px", fontSize: "0.85rem" }}
-                        >
-                            Clear Filters
-                        </button>
+                        <div className="recommended-item">
+                            <div className="recommended-image" />
+                            <h4>Clay Incense Holder</h4>
+                            <div className="recommended-price">₹299</div>
+                            <button className="btn-sm btn-primary">View</button>
+                        </div>
+                        <div className="recommended-item">
+                            <div className="recommended-image" />
+                            <h4>Handmade Clay Bowl</h4>
+                            <div className="recommended-price">₹499</div>
+                            <button className="btn-sm btn-primary">View</button>
+                        </div>
                     </div>
-                )}
+                </section>
             </div>
 
             <Footer />
         </div>
     );
 }
+
 export default Orders;
