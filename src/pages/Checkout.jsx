@@ -28,6 +28,11 @@ import {
   FiBriefcase,
   FiSmartphone,
   FiDollarSign,
+  FiHeart,
+  FiShoppingBag,
+  FiInfo,
+  FiCheckCircle,
+  FiAlertCircle,
 } from "react-icons/fi";
 
 import {
@@ -38,8 +43,9 @@ import {
   SiPhonepe,
 } from "react-icons/si";
 
-import { FaMoneyBillWave, FaQrcode } from "react-icons/fa";
+import { FaMoneyBillWave, FaQrcode, FaRocket, FaShieldAlt } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
+import { HiOutlineLocationMarker, HiOutlineCheckCircle } from "react-icons/hi";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -79,6 +85,7 @@ function Checkout() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const [loadingText, setLoadingText] = useState("Preparing your order...");
+  const [loadingStep, setLoadingStep] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editingAddress, setEditingAddress] = useState(null);
@@ -88,6 +95,7 @@ function Checkout() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isAddressDrawerVisible, setIsAddressDrawerVisible] = useState(false);
+  const [expandedPaymentInfo, setExpandedPaymentInfo] = useState(false);
 
   // =====================================
   // CHECK DEVICE
@@ -280,9 +288,16 @@ function Checkout() {
 
     setPlacingOrder(true);
     setShowOverlay(true);
+    setLoadingStep(0);
 
     try {
+      setLoadingText("Preparing your order...");
+      setLoadingStep(1);
+      await new Promise(resolve => setTimeout(resolve, 800));
+
       setLoadingText("Creating your order...");
+      setLoadingStep(2);
+      
       const payload = {
         address_id: selectedAddress,
         payment_method: paymentMethod,
@@ -301,6 +316,7 @@ function Checkout() {
 
       if (paymentMethod === "COD") {
         setLoadingText("Order placed successfully!");
+        setLoadingStep(4);
         setTimeout(() => {
           navigate(`/order-success/${order.order_id}`);
         }, 1500);
@@ -323,7 +339,10 @@ function Checkout() {
   const handleRazorpayPayment = async (orderId) => {
     try {
       setProcessingPayment(true);
-      setLoadingText("Opening secure payment...");
+      setLoadingText("Opening secure payment gateway...");
+      setLoadingStep(3);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const razorpayRes = await api.post("/payments/create-order/", {
         order_id: orderId,
       });
@@ -346,6 +365,7 @@ function Checkout() {
         handler: async function (response) {
           try {
             setLoadingText("Verifying payment...");
+            setLoadingStep(4);
             const verifyRes = await api.post("/payments/verify/", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -354,6 +374,7 @@ function Checkout() {
             });
             if (verifyRes.data.success) {
               setLoadingText("Payment successful!");
+              setLoadingStep(5);
               setTimeout(() => {
                 navigate(`/order-success/${orderId}`);
               }, 1500);
@@ -361,6 +382,7 @@ function Checkout() {
           } catch (error) {
             console.error("Payment Verification Error:", error);
             alert("Payment verification failed");
+            setShowOverlay(false);
           }
         },
         prefill: {
@@ -370,14 +392,21 @@ function Checkout() {
         theme: {
           color: "#C86A2B",
         },
+        modal: {
+          ondismiss: function() {
+            setShowOverlay(false);
+            setProcessingPayment(false);
+          }
+        }
       };
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
       razorpay.on("payment.failed", function (response) {
         console.log(response.error);
-        alert("Payment failed");
+        alert("Payment failed. Please try again.");
         setShowOverlay(false);
+        setProcessingPayment(false);
       });
     } catch (error) {
       console.error("Razorpay Error:", error);
@@ -425,22 +454,19 @@ function Checkout() {
       <>
         <Navbar />
         <div className="checkout-loader">
-          <div className="skeleton-container">
-            <div className="skeleton-card">
-              <div className="skeleton-line large"></div>
-              <div className="skeleton-line"></div>
-              <div className="skeleton-line"></div>
+          <div className="loader-container">
+            <div className="clay-loader">
+              <div className="clay-ring"></div>
+              <div className="clay-ring-2"></div>
+              <div className="clay-logo">✦</div>
             </div>
-            <div className="skeleton-card">
-              <div className="skeleton-line large"></div>
-              <div className="skeleton-line"></div>
-              <div className="skeleton-line"></div>
-            </div>
-            <div className="skeleton-card right">
-              <div className="skeleton-line large"></div>
-              <div className="skeleton-line"></div>
-              <div className="skeleton-line"></div>
-              <div className="skeleton-line"></div>
+            <h2 className="loader-title">Preparing your checkout</h2>
+            <p className="loader-subtitle">Please wait while we get everything ready</p>
+            <div className="loader-shimmer">
+              <div className="shimmer-line"></div>
+              <div className="shimmer-line"></div>
+              <div className="shimmer-line"></div>
+              <div className="shimmer-line"></div>
             </div>
           </div>
         </div>
@@ -462,37 +488,77 @@ function Checkout() {
             <div className="checkout-card address-card">
               <div className="card-header">
                 <div className="header-left">
-                  <FiMapPin className="header-icon" />
-                  <h2 className="section-title">Deliver To</h2>
+                  <div className="header-icon-wrapper">
+                    <HiOutlineLocationMarker className="header-icon" />
+                  </div>
+                  <div>
+                    <h2 className="section-title">Delivery Address</h2>
+                    <p className="section-subtitle">Where should we ship your order?</p>
+                  </div>
                 </div>
+                {selectedAddress && (
+                  <button 
+                    className="change-address-btn"
+                    onClick={() => setShowAddressDrawer(true)}
+                  >
+                    Change
+                  </button>
+                )}
               </div>
 
               {/* Selected Address */}
               {selectedAddress && addresses.filter(a => a.address_id === selectedAddress).length > 0 ? (
                 addresses.filter(a => a.address_id === selectedAddress).map(address => (
                   <div key={address.address_id} className="selected-address premium">
-                    <div className="address-info">
-                      <div className="address-name-row">
-                        <span className="address-name">{address.full_name}</span>
-                        <span className="address-phone">{address.phone_number}</span>
+                    <div className="address-card-content">
+                      <div className="address-badge-row">
+                        <div className="address-name-group">
+                          <span className="address-name">{address.full_name}</span>
+                          <span className="address-phone">{address.phone_number}</span>
+                        </div>
+                        <div className="address-tags">
+                          {address.is_default && (
+                            <span className="tag-default">
+                              <HiOutlineCheckCircle className="tag-icon" />
+                              Default
+                            </span>
+                          )}
+                          <span className={`tag-type ${address.address_type.toLowerCase()}`}>
+                            {getAddressIcon(address.address_type)}
+                            {address.address_type}
+                          </span>
+                        </div>
                       </div>
                       <p className="address-line">
                         {address.address_line}, {address.city}, {address.state} - {address.pincode}
                       </p>
-                      <div className="address-tags">
-                        {address.is_default && <span className="tag-default">Default</span>}
-                        <span className={`tag-type ${address.address_type.toLowerCase()}`}>
-                          {getAddressIcon(address.address_type)}
-                          {address.address_type}
-                        </span>
-                      </div>
                     </div>
-                    <button 
-                      className="change-address-btn"
-                      onClick={() => setShowAddressDrawer(true)}
-                    >
-                      Change Address
-                    </button>
+                    <div className="address-actions">
+                      <button 
+                        className="action-btn edit"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          editAddress(address);
+                          setShowAddressDrawer(true);
+                        }}
+                        aria-label="Edit address"
+                      >
+                        <FiEdit2 />
+                      </button>
+                      <button 
+                        className="action-btn delete"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setShowDeleteConfirm(address.address_id);
+                        }}
+                        aria-label="Delete address"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                    <div className="address-check-badge">
+                      <FiCheck />
+                    </div>
                   </div>
                 ))
               ) : (
@@ -501,7 +567,7 @@ function Checkout() {
                    ========================================== */
                 <div className="empty-address-state">
                   <div className="empty-icon-wrapper">
-                    <FiMapPin className="empty-icon" />
+                    <HiOutlineLocationMarker className="empty-icon" />
                   </div>
                   <h3 className="empty-title">No Delivery Address</h3>
                   <p className="empty-description">
@@ -511,11 +577,10 @@ function Checkout() {
                     className="add-address-primary"
                     onClick={() => {
                       setShowAddressDrawer(true);
-                      // Open form directly when no addresses exist
                       setTimeout(() => openAddAddressForm(), 100);
                     }}
                   >
-                    <FiPlus /> Add Address
+                    <FiPlus className="btn-icon" /> Add Address
                   </button>
                 </div>
               )}
@@ -525,12 +590,18 @@ function Checkout() {
             <div className="checkout-card payment-card">
               <div className="card-header">
                 <div className="header-left">
-                  <FiCreditCard className="header-icon" />
-                  <h2 className="section-title">Payment Method</h2>
+                  <div className="header-icon-wrapper">
+                    <FiCreditCard className="header-icon" />
+                  </div>
+                  <div>
+                    <h2 className="section-title">Payment Method</h2>
+                    <p className="section-subtitle">Choose how you'd like to pay</p>
+                  </div>
                 </div>
               </div>
 
               <div className="payment-methods-grid">
+                {/* COD Option */}
                 <label className={`payment-method ${paymentMethod === "COD" ? "active" : ""}`}>
                   <input
                     type="radio"
@@ -546,10 +617,15 @@ function Checkout() {
                       <h4>Cash on Delivery</h4>
                       <p>Pay when you receive</p>
                     </div>
-                    {paymentMethod === "COD" && <FiCheck className="payment-method-check" />}
+                    {paymentMethod === "COD" && (
+                      <div className="payment-method-check">
+                        <FiCheck />
+                      </div>
+                    )}
                   </div>
                 </label>
 
+                {/* Razorpay Option */}
                 <label className={`payment-method ${paymentMethod === "RAZORPAY" ? "active" : ""}`}>
                   <input
                     type="radio"
@@ -559,92 +635,61 @@ function Checkout() {
                   />
                   <div className="payment-method-content">
                     <div className="payment-method-icon">
-                      <FiCreditCard />
+                      <FaShieldAlt />
                     </div>
                     <div className="payment-method-info">
-                      <h4>Card / UPI</h4>
-                      <p>Credit, Debit, UPI, Netbanking</p>
+                      <h4>Pay with Razorpay</h4>
+                      <p>UPI • Cards • Net Banking • Wallets</p>
                     </div>
-                    {paymentMethod === "RAZORPAY" && <FiCheck className="payment-method-check" />}
-                  </div>
-                </label>
-
-                <label className={`payment-method ${paymentMethod === "UPI" ? "active" : ""}`}>
-                  <input
-                    type="radio"
-                    value="UPI"
-                    checked={paymentMethod === "UPI"}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <div className="payment-method-content">
-                    <div className="payment-method-icon">
-                      <FaQrcode />
-                    </div>
-                    <div className="payment-method-info">
-                      <h4>UPI</h4>
-                      <p>Google Pay, PhonePe, Paytm</p>
-                    </div>
-                    {paymentMethod === "UPI" && <FiCheck className="payment-method-check" />}
+                    {paymentMethod === "RAZORPAY" && (
+                      <div className="payment-method-check">
+                        <FiCheck />
+                      </div>
+                    )}
                   </div>
                 </label>
               </div>
 
-              {/* UPI QR Code */}
-              {paymentMethod === "UPI" && (
-                <div className="upi-section">
-                  <div className="upi-toggle">
-                    <button
-                      className={`toggle-btn ${!isMobile ? "active" : ""}`}
-                      onClick={() => setShowQRCode(true)}
-                    >
-                      <FaQrcode /> QR Code
-                    </button>
-                    <button
-                      className={`toggle-btn ${isMobile ? "active" : ""}`}
-                      onClick={() => setShowQRCode(false)}
-                    >
-                      <FiSmartphone /> Apps
-                    </button>
-                  </div>
-
-                  {showQRCode ? (
-                    <div className="qr-container">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=clayware@upi&pn=ClayWare&am=${finalAmount}&cu=INR`}
-                        alt="UPI QR Code"
-                        className="qr-image"
-                        onError={(e) => {
-                          e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=clayware@upi&pn=ClayWare&am=${finalAmount}`;
-                        }}
-                      />
-                      <div className="qr-details">
-                        <p className="qr-amount">₹{finalAmount}</p>
-                        <p className="qr-merchant">ClayWare</p>
-                        <p className="qr-upi-id">clayware@upi</p>
-                        <p className="qr-hint">Scan with any UPI app</p>
-                      </div>
+              {/* Razorpay Details */}
+              {paymentMethod === "RAZORPAY" && (
+                <div className="razorpay-details">
+                  <div className="razorpay-header" onClick={() => setExpandedPaymentInfo(!expandedPaymentInfo)}>
+                    <div className="razorpay-header-left">
+                      <FaShieldAlt className="razorpay-shield" />
+                      <span>Secure Payments Powered by Razorpay</span>
                     </div>
-                  ) : (
-                    <div className="upi-apps">
-                      <p className="apps-label">Pay with your preferred app</p>
-                      <div className="apps-grid">
-                        {[
-                          { name: "Google Pay", icon: SiGooglepay },
-                          { name: "PhonePe", icon: SiPhonepe },
-                          { name: "Paytm", icon: SiPaytm },
-                        ].map((app) => {
-                          const Icon = app.icon;
-                          return (
-                            <button
-                              key={app.name}
-                              className="app-btn"
-                              onClick={() => placeOrder()}
-                            >
-                              <Icon />
-                              <span>{app.name}</span>
-                            </button>
-                          );
-                        })}
+                    <FiChevronDown className={`razorpay-chevron ${expandedPaymentInfo ? 'expanded' : ''}`} />
+                  </div>
+                  {expandedPaymentInfo && (
+                    <div className="razorpay-expanded">
+                      <p className="razorpay-description">
+                        Razorpay provides a secure, seamless checkout experience. 
+                        You can pay using:
+                      </p>
+                      <div className="razorpay-methods">
+                        <div className="razorpay-method-item">
+                          <span className="method-dot">•</span>
+                          <span>UPI (Google Pay, PhonePe, Paytm, BHIM)</span>
+                        </div>
+                        <div className="razorpay-method-item">
+                          <span className="method-dot">•</span>
+                          <span>Credit & Debit Cards (Visa, Mastercard, RuPay)</span>
+                        </div>
+                        <div className="razorpay-method-item">
+                          <span className="method-dot">•</span>
+                          <span>Net Banking (All major banks)</span>
+                        </div>
+                        <div className="razorpay-method-item">
+                          <span className="method-dot">•</span>
+                          <span>Wallets (Paytm, Amazon Pay, etc.)</span>
+                        </div>
+                      </div>
+                      <div className="razorpay-badges">
+                        <SiVisa className="payment-badge" />
+                        <SiMastercard className="payment-badge" />
+                        <SiGooglepay className="payment-badge" />
+                        <SiPaytm className="payment-badge" />
+                        <SiPhonepe className="payment-badge" />
                       </div>
                     </div>
                   )}
@@ -653,7 +698,7 @@ function Checkout() {
 
               <div className="secure-payment-badges">
                 <FiLock className="secure-badge-icon" />
-                <span>100% Secure Payments</span>
+                <span>100% Secure & Encrypted</span>
                 <div className="payment-icons">
                   <SiVisa />
                   <SiMastercard />
@@ -670,19 +715,24 @@ function Checkout() {
           ========================== */}
           <div className="checkout-right">
             <div className="summary-card">
-              <h2 className="summary-title">Order Summary</h2>
+              <div className="summary-header">
+                <h2 className="summary-title">Order Summary</h2>
+                <span className="summary-items-count">{cart.total_items} items</span>
+              </div>
 
               {/* Products */}
               <div className="summary-products">
                 {cart.cart_items.map((item) => (
                   <div className="summary-product" key={item.cart_item_id}>
-                    <img src={item.product_image} alt={item.product_name} className="product-image" />
+                    <div className="product-image-wrapper">
+                      <img src={item.product_image} alt={item.product_name} className="product-image" />
+                      <span className="product-quantity-badge">{item.quantity}</span>
+                    </div>
                     <div className="product-details">
-                      <h4>{item.product_name}</h4>
+                      <h4 className="product-name">{item.product_name}</h4>
                       {item.variant_capacity && (
                         <p className="product-variant">Size: {item.variant_capacity}</p>
                       )}
-                      <p className="product-qty">Qty: {item.quantity}</p>
                     </div>
                     <span className="product-price">₹{item.subtotal_discount_price}</span>
                   </div>
@@ -702,7 +752,7 @@ function Checkout() {
                   </div>
                 )}
                 <div className="price-row">
-                  <span className="price-label">Delivery</span>
+                  <span className="price-label">Delivery Charges</span>
                   <span className="delivery-free">FREE</span>
                 </div>
                 <div className="price-divider"></div>
@@ -718,7 +768,10 @@ function Checkout() {
 
               {/* Total */}
               <div className="total-section">
-                <span className="total-label">Total</span>
+                <div className="total-label-group">
+                  <span className="total-label">Total</span>
+                  <span className="total-tax">Inclusive of all taxes</span>
+                </div>
                 <span className="total-amount">₹{finalAmount}</span>
               </div>
 
@@ -730,6 +783,7 @@ function Checkout() {
                   <p className="delivery-date">15 July, 2025</p>
                   <span className="delivery-free-badge">Free Delivery</span>
                 </div>
+                <FiTruck className="delivery-truck" />
               </div>
 
               {/* Secure Payment Footer */}
@@ -747,15 +801,22 @@ function Checkout() {
                 {placingOrder ? (
                   <>
                     <span className="btn-loader"></span>
-                    Processing...
+                    <span>Processing Order...</span>
                   </>
                 ) : (
                   <>
-                    <span>Place Order</span>
+                    <span className="btn-text">Place Order</span>
                     <span className="btn-amount">₹{finalAmount}</span>
+                    <FaRocket className="btn-rocket" />
                   </>
                 )}
               </button>
+
+              {/* Order Summary Footer */}
+              <div className="summary-footer">
+                <FiShield className="footer-icon" />
+                <span>Your order is protected by our secure checkout</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1011,7 +1072,9 @@ function Checkout() {
                     </div>
                   ) : (
                     <div className="no-addresses-message">
+                      <FiAlertCircle className="no-address-icon" />
                       <p>No addresses found</p>
+                      <span className="no-address-sub">Add a new address to continue</span>
                     </div>
                   )}
                 </div>
@@ -1057,12 +1120,27 @@ function Checkout() {
           <div className="payment-overlay-content">
             <div className="payment-loader">
               <div className="loader-ring"></div>
+              <div className="loader-ring-2"></div>
+              <div className="loader-ring-3"></div>
             </div>
             <h3 className="payment-status">{loadingText}</h3>
             <p className="payment-hint">Please don't refresh or close this page</p>
             <div className="payment-progress">
-              <div className="progress-bar">
-                <div className="progress-fill"></div>
+              <div className="progress-track">
+                <div 
+                  className="progress-fill" 
+                  style={{ 
+                    width: `${(loadingStep / 5) * 100}%`,
+                    transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                ></div>
+              </div>
+              <div className="progress-steps">
+                <span className={`step ${loadingStep >= 1 ? 'active' : ''}`}>1</span>
+                <span className={`step ${loadingStep >= 2 ? 'active' : ''}`}>2</span>
+                <span className={`step ${loadingStep >= 3 ? 'active' : ''}`}>3</span>
+                <span className={`step ${loadingStep >= 4 ? 'active' : ''}`}>4</span>
+                <span className={`step ${loadingStep >= 5 ? 'active' : ''}`}>5</span>
               </div>
             </div>
           </div>

@@ -13,6 +13,9 @@ import {
     FiLogOut,
     FiHome,
     FiShoppingCart,
+    FiX,
+    FiStar,
+    FiTruck,
 } from "react-icons/fi";
 
 import {
@@ -39,9 +42,12 @@ function Navbar() {
     const [cartCount, setCartCount] = useState(0);
     const [showDropdown, setShowDropdown] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showSearch, setShowSearch] = useState(false);
 
-    const dropdownRef = useRef();
-    const mobileMenuRef = useRef();
+    const dropdownRef = useRef(null);
+    const mobileMenuRef = useRef(null);
+    const searchInputRef = useRef(null);
 
     // -------------------------------
     // Login & Cart Check
@@ -130,7 +136,7 @@ function Navbar() {
                 mobileMenu &&
                 mobileMenuRef.current &&
                 !mobileMenuRef.current.contains(event.target) &&
-                !event.target.closest('.mobile-menu')
+                !event.target.closest('.mobile-menu-toggle')
             ) {
                 closeMobileMenu();
             }
@@ -143,6 +149,39 @@ function Navbar() {
             document.removeEventListener("mousedown", handleClickOutside);
 
     }, [mobileMenu]);
+
+    // -------------------------------
+    // Escape Key Handler
+    // -------------------------------
+
+    useEffect(() => {
+
+        const handleEscape = (event) => {
+
+            if (event.key === "Escape") {
+
+                if (mobileMenu) {
+                    closeMobileMenu();
+                }
+
+                if (showDropdown) {
+                    setShowDropdown(false);
+                }
+
+                if (showSearch) {
+                    setShowSearch(false);
+                }
+
+            }
+
+        };
+
+        document.addEventListener("keydown", handleEscape);
+
+        return () =>
+            document.removeEventListener("keydown", handleEscape);
+
+    }, [mobileMenu, showDropdown, showSearch]);
 
     // -------------------------------
     // Body Scroll Lock
@@ -173,6 +212,16 @@ function Navbar() {
     }, [location]);
 
     // -------------------------------
+    // Search Focus
+    // -------------------------------
+
+    useEffect(() => {
+        if (showSearch && searchInputRef.current) {
+            setTimeout(() => searchInputRef.current.focus(), 100);
+        }
+    }, [showSearch]);
+
+    // -------------------------------
     // Toggle Functions
     // -------------------------------
 
@@ -186,6 +235,23 @@ function Navbar() {
 
     const closeMobileMenu = () => {
         setMobileMenu(false);
+    };
+
+    const toggleSearch = () => {
+        setShowSearch(!showSearch);
+        if (!showSearch && searchInputRef.current) {
+            setTimeout(() => searchInputRef.current.focus(), 100);
+        }
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+            setShowSearch(false);
+            setSearchQuery("");
+            closeMobileMenu();
+        }
     };
 
     // -------------------------------
@@ -208,20 +274,22 @@ function Navbar() {
     };
 
     // -------------------------------
-    // Navigation Handler
-    // -------------------------------
-
-    const handleNavClick = (path) => {
-        navigate(path);
-        closeMobileMenu();
-    };
-
-    // -------------------------------
     // Check if path is active
     // -------------------------------
 
     const isActive = (path) => {
+        if (path === "/" && location.pathname === "/") return true;
+        if (path === "/shop" && location.pathname === "/shop") return true;
         return location.pathname === path;
+    };
+
+    // -------------------------------
+    // Navigation Handler
+    // -------------------------------
+
+    const handleNavigation = (path) => {
+        navigate(path);
+        closeMobileMenu();
     };
 
     // -------------------------------
@@ -229,31 +297,88 @@ function Navbar() {
     // -------------------------------
 
     const bottomNavItems = [
-        { icon: FiHome, label: "Home", path: "/" },
-        { icon: FiShoppingBag, label: "Shop", path: "/shop" },
-        { icon: FiSearch, label: "Search", path: "/shop" },
+        { 
+            icon: FiHome, 
+            label: "Home", 
+            path: "/",
+            ariaLabel: "Go to Home"
+        },
+        { 
+            icon: FiShoppingBag, 
+            label: "Shop", 
+            path: "/shop",
+            ariaLabel: "Go to Shop"
+        },
+        { 
+            icon: FiSearch, 
+            label: "Search", 
+            path: "/shop",
+            ariaLabel: "Search products",
+            isSearch: true
+        },
         { 
             icon: FiShoppingCart, 
             label: "Cart", 
             path: "/cart",
-            badge: cartCount > 0 ? (cartCount > 99 ? "99+" : cartCount) : null
+            badge: cartCount > 0 ? (cartCount > 99 ? "99+" : cartCount) : null,
+            ariaLabel: "Go to Cart",
+            requiresAuth: true
         },
         { 
             icon: FiUser, 
-            label: isLoggedIn ? "Me" : "Login", 
-            path: isLoggedIn ? "/profile" : "/login"
+            label: isLoggedIn ? "Profile" : "Login", 
+            path: isLoggedIn ? "/profile" : "/login",
+            ariaLabel: isLoggedIn ? "Go to Profile" : "Go to Login"
         },
     ];
+
+    // -------------------------------
+    // Bottom Nav Click Handler
+    // -------------------------------
+
+    const handleBottomNavClick = (item) => {
+
+        if (item.requiresAuth && !isLoggedIn) {
+            navigate("/login");
+            return;
+        }
+
+        if (item.isSearch) {
+            if (isLoggedIn) {
+                navigate("/shop");
+            } else {
+                navigate("/login");
+            }
+            return;
+        }
+
+        navigate(item.path);
+
+    };
 
     return (
 
         <>
 
             {/* ========================= */}
+            {/* TOP HEADER BAR */}
+            {/* ========================= */}
+
+            <div className="top-header-bar">
+                <div className="top-header-content">
+                    <span>✨ Free Shipping on orders above ₹999</span>
+                    <span className="top-header-divider">|</span>
+                    <span>🛡️ 100% Secure Checkout</span>
+                    <span className="top-header-divider">|</span>
+                    <span>📦 Easy Returns</span>
+                </div>
+            </div>
+
+            {/* ========================= */}
             {/* MAIN NAVBAR */}
             {/* ========================= */}
 
-            <header className="navbar">
+            <header className="navbar" role="banner">
 
                 {/* ========================= */}
                 {/* Logo */}
@@ -261,43 +386,56 @@ function Navbar() {
 
                 <div
                     className="logo"
-                    onClick={() => navigate("/")}
+                    onClick={() => handleNavigation("/")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            handleNavigation("/");
+                        }
+                    }}
+                    aria-label="ClayWare Home"
                 >
-                    CLAYWARE
+                    <span className="logo-icon" aria-hidden="true">✦</span>
+                    <span className="logo-text">CLAYWARE</span>
                 </div>
 
                 {/* ========================= */}
                 {/* Desktop Navigation */}
                 {/* ========================= */}
 
-                <nav className="desktop-nav">
+                <nav className="desktop-nav" aria-label="Main navigation">
 
                     <Link 
                         to="/" 
-                        className={isActive("/") ? "active-link" : ""}
+                        className={`nav-link ${isActive("/") ? "active-link" : ""}`}
+                        aria-current={isActive("/") ? "page" : undefined}
                     >
-                        HOME
+                        Home
                     </Link>
 
                     <Link 
                         to="/shop" 
-                        className={isActive("/shop") ? "active-link" : ""}
+                        className={`nav-link ${isActive("/shop") ? "active-link" : ""}`}
+                        aria-current={isActive("/shop") ? "page" : undefined}
                     >
-                        SHOP
+                        Shop
                     </Link>
 
                     <Link 
                         to="/our-story" 
-                        className={isActive("/our-story") ? "active-link" : ""}
+                        className={`nav-link ${isActive("/our-story") ? "active-link" : ""}`}
+                        aria-current={isActive("/our-story") ? "page" : undefined}
                     >
-                        OUR STORY
+                        Our Story
                     </Link>
 
                     <Link 
                         to="/sell" 
-                        className={isActive("/sell") ? "active-link" : ""}
+                        className={`nav-link ${isActive("/sell") ? "active-link" : ""}`}
+                        aria-current={isActive("/sell") ? "page" : undefined}
                     >
-                        SELL
+                        Sell
                     </Link>
 
                 </nav>
@@ -306,25 +444,73 @@ function Navbar() {
                 {/* Right Side Actions */}
                 {/* ========================= */}
 
-                <div className="nav-actions">
+                <div className="nav-actions" role="toolbar" aria-label="User actions">
 
-                    {/* Search - Desktop Only */}
-                    <FiSearch
-                        className="nav-icon desktop-only"
-                        onClick={() => navigate("/shop")}
-                    />
+                    {/* Search - Desktop */}
+                    <div className="search-wrapper desktop-only">
+                        <form onSubmit={handleSearch} className="search-form" role="search">
+                            <input
+                                ref={searchInputRef}
+                                type="search"
+                                placeholder="Search products..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="search-input"
+                                aria-label="Search for products"
+                                aria-describedby="search-description"
+                            />
+                            <span id="search-description" className="sr-only">
+                                Enter your search term and press Enter
+                            </span>
+                            <button 
+                                type="submit" 
+                                className="search-submit" 
+                                aria-label="Submit search"
+                            >
+                                <FiSearch aria-hidden="true" />
+                            </button>
+                        </form>
+                    </div>
 
-                    {/* Cart - Desktop Only */}
+                    {/* Search Toggle - Mobile */}
+                    <button
+                        className="search-toggle mobile-only"
+                        onClick={toggleSearch}
+                        aria-label="Toggle search"
+                        aria-expanded={showSearch}
+                    >
+                        <FiSearch aria-hidden="true" />
+                    </button>
+
+                    {/* Cart */}
                     <div
-                        className="cart-wrapper desktop-only"
-                        onClick={() => navigate("/cart")}
+                        className="cart-wrapper"
+                        onClick={() => {
+                            if (!isLoggedIn) {
+                                navigate("/login");
+                                return;
+                            }
+                            navigate("/cart");
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                if (!isLoggedIn) {
+                                    navigate("/login");
+                                    return;
+                                }
+                                navigate("/cart");
+                            }
+                        }}
+                        aria-label={`Cart with ${cartCount} items`}
                     >
 
-                        <FiShoppingBag className="nav-icon cart-icon" />
+                        <FiShoppingBag className="nav-icon cart-icon" aria-hidden="true" />
 
                         {cartCount > 0 && (
 
-                            <span className="cart-badge">
+                            <span className="cart-badge" aria-label={`${cartCount} items in cart`}>
 
                                 {cartCount > 99
                                     ? "99+"
@@ -337,22 +523,24 @@ function Navbar() {
                     </div>
 
                     {/* ========================= */}
-                    {/* Login / Account - Desktop Only */}
+                    {/* Login / Account */}
                     {/* ========================= */}
 
                     {!isLoggedIn ? (
 
                         <button
-                            className="login-btn desktop-only"
+                            className="login-btn"
                             onClick={() => navigate("/login")}
+                            aria-label="Login to your account"
                         >
-                            LOGIN
+                            <FiUser className="login-icon" aria-hidden="true" />
+                            <span>Login</span>
                         </button>
 
                     ) : (
 
                         <div
-                            className="account-menu desktop-only"
+                            className="account-menu"
                             ref={dropdownRef}
                         >
 
@@ -361,9 +549,10 @@ function Navbar() {
                                 onClick={toggleDropdown}
                                 aria-expanded={showDropdown}
                                 aria-haspopup="true"
+                                aria-label="Account menu"
                             >
 
-                                <div className="avatar-circle">
+                                <div className="avatar-circle" aria-hidden="true">
 
                                     <FiUser />
 
@@ -371,7 +560,7 @@ function Navbar() {
 
                                 <span>
 
-                                    My Account
+                                    Account
 
                                 </span>
 
@@ -381,17 +570,22 @@ function Navbar() {
                                             ? "rotate"
                                             : ""
                                     }
+                                    aria-hidden="true"
                                 />
 
                             </button>
 
                             {showDropdown && (
 
-                                <div className="account-dropdown">
+                                <div 
+                                    className="account-dropdown"
+                                    role="menu"
+                                    aria-label="Account options"
+                                >
 
-                                    <div className="dropdown-header">
+                                    <div className="dropdown-header" role="presentation">
 
-                                        <div className="profile-avatar">
+                                        <div className="profile-avatar" aria-hidden="true">
 
                                             <FiUser />
 
@@ -399,7 +593,7 @@ function Navbar() {
 
                                         <div>
 
-                                            <h4>Welcome</h4>
+                                            <h4>Welcome Back</h4>
 
                                             <p>
                                                 {
@@ -413,70 +607,117 @@ function Navbar() {
 
                                     </div>
 
-                                    <div className="dropdown-divider"></div>
+                                    <div className="dropdown-divider" role="separator"></div>
 
                                     <div
                                         className="dropdown-item"
+                                        role="menuitem"
+                                        tabIndex={0}
                                         onClick={() => {
                                             navigate("/profile");
                                             setShowDropdown(false);
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                navigate("/profile");
+                                                setShowDropdown(false);
+                                            }
+                                        }}
                                     >
-                                        <FiUser />
+                                        <FiUser aria-hidden="true" />
                                         <span>My Profile</span>
                                     </div>
 
                                     <div
                                         className="dropdown-item"
+                                        role="menuitem"
+                                        tabIndex={0}
                                         onClick={() => {
                                             navigate("/orders");
                                             setShowDropdown(false);
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                navigate("/orders");
+                                                setShowDropdown(false);
+                                            }
+                                        }}
                                     >
-                                        <FiPackage />
+                                        <FiPackage aria-hidden="true" />
                                         <span>My Orders</span>
                                     </div>
 
                                     <div
                                         className="dropdown-item"
+                                        role="menuitem"
+                                        tabIndex={0}
                                         onClick={() => {
                                             navigate("/wishlist");
                                             setShowDropdown(false);
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                navigate("/wishlist");
+                                                setShowDropdown(false);
+                                            }
+                                        }}
                                     >
-                                        <FiHeart />
+                                        <FiHeart aria-hidden="true" />
                                         <span>Wishlist</span>
                                     </div>
 
                                     <div
                                         className="dropdown-item"
+                                        role="menuitem"
+                                        tabIndex={0}
                                         onClick={() => {
                                             navigate("/addresses");
                                             setShowDropdown(false);
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                navigate("/addresses");
+                                                setShowDropdown(false);
+                                            }
+                                        }}
                                     >
-                                        <FiMapPin />
+                                        <FiMapPin aria-hidden="true" />
                                         <span>My Addresses</span>
                                     </div>
 
                                     <div
                                         className="dropdown-item"
+                                        role="menuitem"
+                                        tabIndex={0}
                                         onClick={() => {
                                             navigate("/settings");
                                             setShowDropdown(false);
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                navigate("/settings");
+                                                setShowDropdown(false);
+                                            }
+                                        }}
                                     >
-                                        <FiSettings />
+                                        <FiSettings aria-hidden="true" />
                                         <span>Settings</span>
                                     </div>
 
-                                    <div className="dropdown-divider"></div>
+                                    <div className="dropdown-divider" role="separator"></div>
 
                                     <div
                                         className="dropdown-item logout"
+                                        role="menuitem"
+                                        tabIndex={0}
                                         onClick={handleLogout}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                handleLogout();
+                                            }
+                                        }}
                                     >
-                                        <FiLogOut />
+                                        <FiLogOut aria-hidden="true" />
                                         <span>Logout</span>
                                     </div>
 
@@ -489,104 +730,194 @@ function Navbar() {
                     )}
 
                     {/* Mobile Menu Toggle */}
-                    <FiMenu
-                        className="mobile-menu"
+                    <button
+                        className="mobile-menu-toggle"
                         onClick={toggleMobileMenu}
                         aria-label="Toggle menu"
-                    />
+                        aria-expanded={mobileMenu}
+                    >
+
+                        <FiMenu aria-hidden="true" />
+
+                    </button>
 
                 </div>
 
             </header>
 
             {/* ========================= */}
+            {/* MOBILE SEARCH OVERLAY */}
+            {/* ========================= */}
+
+            <div className={`mobile-search-overlay ${showSearch ? 'active' : ''}`} role="search">
+                <form onSubmit={handleSearch} className="mobile-search-form">
+                    <input
+                        ref={searchInputRef}
+                        type="search"
+                        placeholder="Search for products..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="mobile-search-input"
+                        aria-label="Search for products"
+                        autoFocus
+                    />
+                    <button type="submit" className="mobile-search-submit" aria-label="Submit search">
+                        <FiSearch aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        className="mobile-search-close"
+                        onClick={toggleSearch}
+                        aria-label="Close search"
+                    >
+                        <FiX aria-hidden="true" />
+                    </button>
+                </form>
+            </div>
+
+            {/* ========================= */}
             {/* MOBILE SIDE MENU */}
             {/* ========================= */}
 
-            <div className={`mobile-menu-overlay ${mobileMenu ? 'active' : ''}`} onClick={closeMobileMenu}></div>
+            <div 
+                className={`mobile-menu-overlay ${mobileMenu ? 'active' : ''}`} 
+                onClick={closeMobileMenu}
+                aria-hidden="true"
+            ></div>
 
-            <nav className={`mobile-nav ${mobileMenu ? 'active' : ''}`} ref={mobileMenuRef}>
+            <nav 
+                className={`mobile-nav ${mobileMenu ? 'active' : ''}`} 
+                ref={mobileMenuRef}
+                aria-label="Mobile navigation"
+                role="dialog"
+                aria-modal="true"
+            >
 
                 <div className="mobile-nav-header">
-                    <div className="mobile-nav-logo">CLAYWARE</div>
-                    <button className="mobile-nav-close" onClick={closeMobileMenu}>✕</button>
+                    <div className="mobile-nav-logo">
+                        <span className="logo-icon" aria-hidden="true">✦</span>
+                        <span>CLAYWARE</span>
+                    </div>
+                    <button 
+                        className="mobile-nav-close" 
+                        onClick={closeMobileMenu}
+                        aria-label="Close menu"
+                    >
+                        <FiX aria-hidden="true" />
+                    </button>
                 </div>
+
+                {isLoggedIn && (
+                    <div className="mobile-user-card">
+                        <div className="mobile-user-avatar" aria-hidden="true">
+                            <FiUser />
+                        </div>
+                        <div className="mobile-user-info">
+                            <span className="mobile-user-name">Welcome</span>
+                            <span className="mobile-user-email">
+                                {localStorage.getItem("email") || "User"}
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 <div className="mobile-nav-links">
 
                     <Link 
                         to="/" 
                         onClick={closeMobileMenu}
-                        className={isActive("/") ? "active-link" : ""}
+                        className={`mobile-nav-link ${isActive("/") ? "active-link" : ""}`}
                     >
-                        HOME
+                        <FiHome aria-hidden="true" />
+                        <span>Home</span>
                     </Link>
 
                     <Link 
                         to="/shop" 
                         onClick={closeMobileMenu}
-                        className={isActive("/shop") ? "active-link" : ""}
+                        className={`mobile-nav-link ${isActive("/shop") ? "active-link" : ""}`}
                     >
-                        SHOP
+                        <FiShoppingBag aria-hidden="true" />
+                        <span>Shop</span>
                     </Link>
 
                     <Link 
                         to="/our-story" 
                         onClick={closeMobileMenu}
-                        className={isActive("/our-story") ? "active-link" : ""}
+                        className={`mobile-nav-link ${isActive("/our-story") ? "active-link" : ""}`}
                     >
-                        OUR STORY
+                        <FiStar aria-hidden="true" />
+                        <span>Our Story</span>
                     </Link>
 
                     <Link 
                         to="/sell" 
                         onClick={closeMobileMenu}
-                        className={isActive("/sell") ? "active-link" : ""}
+                        className={`mobile-nav-link ${isActive("/sell") ? "active-link" : ""}`}
                     >
-                        SELL
+                        <FiTruck aria-hidden="true" />
+                        <span>Sell</span>
                     </Link>
 
-                    <div className="mobile-divider"></div>
+                    <div className="mobile-divider" role="separator"></div>
 
                     {isLoggedIn ? (
                         <>
-                            <Link to="/profile" onClick={closeMobileMenu}>
-                                MY PROFILE
+                            <Link to="/profile" onClick={closeMobileMenu} className="mobile-nav-link">
+                                <FiUser aria-hidden="true" />
+                                <span>My Profile</span>
                             </Link>
-                            <Link to="/orders" onClick={closeMobileMenu}>
-                                MY ORDERS
+                            <Link to="/orders" onClick={closeMobileMenu} className="mobile-nav-link">
+                                <FiPackage aria-hidden="true" />
+                                <span>My Orders</span>
                             </Link>
-                            <Link to="/wishlist" onClick={closeMobileMenu}>
-                                WISHLIST
+                            <Link to="/wishlist" onClick={closeMobileMenu} className="mobile-nav-link">
+                                <FiHeart aria-hidden="true" />
+                                <span>Wishlist</span>
                             </Link>
-                            <Link to="/addresses" onClick={closeMobileMenu}>
-                                ADDRESSES
+                            <Link to="/addresses" onClick={closeMobileMenu} className="mobile-nav-link">
+                                <FiMapPin aria-hidden="true" />
+                                <span>Addresses</span>
                             </Link>
-                            <Link to="/settings" onClick={closeMobileMenu}>
-                                SETTINGS
+                            <Link to="/settings" onClick={closeMobileMenu} className="mobile-nav-link">
+                                <FiSettings aria-hidden="true" />
+                                <span>Settings</span>
                             </Link>
-                            <div className="mobile-divider"></div>
+                            <div className="mobile-divider" role="separator"></div>
                             <Link 
                                 to="/login" 
                                 onClick={handleLogout}
-                                className="mobile-logout"
+                                className="mobile-nav-link mobile-logout"
                             >
-                                LOGOUT
+                                <FiLogOut aria-hidden="true" />
+                                <span>Logout</span>
                             </Link>
                         </>
                     ) : (
                         <>
-                            <div className="mobile-divider"></div>
+                            <div className="mobile-divider" role="separator"></div>
                             <Link 
                                 to="/login" 
                                 onClick={closeMobileMenu}
-                                className="mobile-login-link"
+                                className="mobile-nav-link mobile-login-link"
                             >
-                                LOGIN
+                                <FiUser aria-hidden="true" />
+                                <span>Login</span>
+                            </Link>
+                            <Link 
+                                to="/signup" 
+                                onClick={closeMobileMenu}
+                                className="mobile-nav-link mobile-signup-link"
+                            >
+                                <span>Sign Up</span>
                             </Link>
                         </>
                     )}
 
+                </div>
+
+                <div className="mobile-nav-footer">
+                    <span>© 2024 ClayWare</span>
                 </div>
 
             </nav>
@@ -595,7 +926,7 @@ function Navbar() {
             {/* MOBILE BOTTOM NAVIGATION */}
             {/* ========================= */}
 
-            <nav className="bottom-nav">
+            <nav className="bottom-nav" aria-label="Bottom navigation">
 
                 {bottomNavItems.map((item) => {
 
@@ -607,24 +938,25 @@ function Navbar() {
                         <button
                             key={item.label}
                             className={`bottom-nav-item ${isActivePath ? "active" : ""}`}
-                            onClick={() => {
-                                if (item.path === "/cart" && !isLoggedIn) {
-                                    navigate("/login");
-                                    return;
-                                }
-                                navigate(item.path);
-                            }}
-                            aria-label={item.label}
+                            onClick={() => handleBottomNavClick(item)}
+                            aria-label={item.ariaLabel || item.label}
+                            aria-current={isActivePath ? "page" : undefined}
                         >
 
                             <div className="bottom-nav-icon-wrapper">
-                                <Icon />
+                                <Icon aria-hidden="true" />
                                 {item.badge && (
-                                    <span className="bottom-cart-badge">{item.badge}</span>
+                                    <span className="bottom-cart-badge" aria-label={`${item.badge} items`}>
+                                        {item.badge}
+                                    </span>
                                 )}
                             </div>
 
                             <span>{item.label}</span>
+
+                            {isActivePath && (
+                                <span className="bottom-nav-indicator" aria-hidden="true"></span>
+                            )}
 
                         </button>
 
